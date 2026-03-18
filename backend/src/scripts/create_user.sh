@@ -12,7 +12,7 @@ if [ -d "$USER_DIR" ]; then echo EXISTS; exit 1; fi
 MAX_PORT=$(grep -r "[0-9]*:3128" "$BASE" 2>/dev/null | grep -oE "[0-9]+:3128" | cut -d: -f1 | sort -n | tail -1)
 [ -z "$MAX_PORT" ] && PORT=$START_PORT || PORT=$((MAX_PORT + 1))
 
-SECRET=\"ee$(openssl rand -hex 16)$(echo -n $SECRET_DOMAIN | xxd -p)\"
+SECRET="ee$(openssl rand -hex 16)$(echo -n $SECRET_DOMAIN | xxd -p)"
 
 mkdir -p "$USER_DIR"
 

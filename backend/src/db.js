@@ -45,9 +45,18 @@ db.exec(`
     billing_period TEXT DEFAULT 'monthly',
     billing_paid_until DATETIME,
     billing_status TEXT DEFAULT 'active',
+    status TEXT DEFAULT 'active',
     last_seen_at DATETIME,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(node_id) REFERENCES nodes(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS connections_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    node_id INTEGER NOT NULL,
+    user_name TEXT NOT NULL,
+    connections INTEGER DEFAULT 0,
+    recorded_at DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
   CREATE TABLE IF NOT EXISTS settings (
