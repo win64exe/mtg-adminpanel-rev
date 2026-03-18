@@ -9,10 +9,14 @@ SECRET_DOMAIN=$5
 USER_DIR="$BASE/$NAME"
 if [ -d "$USER_DIR" ]; then echo EXISTS; exit 1; fi
 
-MAX_PORT=$(grep -r "[0-9]*:3128" "$BASE" 2>/dev/null | grep -oE "[0-9]+:3128" | cut -d: -f1 | sort -n | tail -1)
+# Calculate next port
+MAX_PORT=$(grep -hE "[0-9]+:3128" "$BASE"/*/docker-compose.yml 2>/dev/null | cut -d: -f1 | grep -oE "[0-9]+" | sort -rn | head -1)
 [ -z "$MAX_PORT" ] && PORT=$START_PORT || PORT=$((MAX_PORT + 1))
 
-SECRET="ee$(openssl rand -hex 16)$(echo -n $SECRET_DOMAIN | xxd -p)"
+# Generate secret (ee + 32 hex + domain hex)
+RAND_HEX=$(openssl rand -hex 16)
+DOMAIN_HEX=$(echo -n "$SECRET_DOMAIN" | od -An -tx1 | tr -d ' \n')
+SECRET="ee${RAND_HEX}${DOMAIN_HEX}"
 
 mkdir -p "$USER_DIR"
 

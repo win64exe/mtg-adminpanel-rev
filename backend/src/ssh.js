@@ -243,7 +243,7 @@ async function removeRemoteUser(node, name) {
   }
   // SSH fallback
   const cmd = [
-    'BASE=' + node.base_dir, 'NAME=' + name, 'USER_DIR="$BASE/$NAME"',
+    'BASE=' + shQuote(node.base_dir), 'NAME=' + shQuote(name), 'USER_DIR="$BASE/$NAME"',
     'if [ -d "$USER_DIR" ]; then cd "$USER_DIR" && docker compose down 2>/dev/null; rm -rf "$USER_DIR"; fi',
     'echo DONE'
   ].join('\n');
@@ -259,7 +259,7 @@ async function stopRemoteUser(node, name) {
       // Agent failed or doesn't know this user — always fall through to SSH
     }
   }
-  await sshExec(node, 'cd ' + node.base_dir + '/' + name + ' && docker compose stop 2>/dev/null');
+  await sshExec(node, `cd ${shQuote(node.base_dir)}/${shQuote(name)} && docker compose stop 2>/dev/null`);
 }
 
 async function startRemoteUser(node, name) {
@@ -271,7 +271,7 @@ async function startRemoteUser(node, name) {
       // Agent failed or doesn't know this user — always fall through to SSH
     }
   }
-  await sshExec(node, 'cd ' + node.base_dir + '/' + name + ' && docker compose up -d 2>/dev/null');
+  await sshExec(node, `cd ${shQuote(node.base_dir)}/${shQuote(name)} && docker compose up -d 2>/dev/null`);
 }
 
 async function restartRemoteUser(node, name) {
@@ -283,7 +283,7 @@ async function restartRemoteUser(node, name) {
       // Agent failed or doesn't know this user — always fall through to SSH
     }
   }
-  await sshExec(node, `cd ${node.base_dir}/${name} && docker compose stop 2>/dev/null; docker compose up -d 2>/dev/null`);
+  await sshExec(node, `cd ${shQuote(node.base_dir)}/${shQuote(name)} && docker compose stop 2>/dev/null; docker compose up -d 2>/dev/null`);
 }
 
 module.exports = {

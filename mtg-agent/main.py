@@ -41,6 +41,16 @@ def auth(token: str):
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 
+def _get_user_dir(name: str) -> Path:
+    """Safe path resolution to prevent path traversal."""
+    if not re.match(r'^[a-zA-Z0-9_-]{1,32}$', name):
+        raise HTTPException(status_code=400, detail="Invalid name")
+    user_dir = (BASE_DIR / name).resolve()
+    if not str(user_dir).startswith(str(BASE_DIR.resolve())):
+        raise HTTPException(status_code=403, detail="Forbidden path")
+    return user_dir
+
+
 # ── Docker low-level helpers ──────────────────────────────
 def _get_mtg_containers():
     """Return list of mtg-* containers via SDK, or None if SDK unavailable/failed."""
@@ -302,9 +312,7 @@ class CreateUserBody(BaseModel):
 async def create_user(body: CreateUserBody, x_agent_token: str = Header(default="")):
     auth(x_agent_token)
     name = body.name
-    if not re.match(r'^[a-zA-Z0-9_-]{1,32}$', name):
-        raise HTTPException(status_code=400, detail="Invalid name")
-    user_dir = BASE_DIR / name
+    user_dir = _get_user_dir(name)
     if user_dir.exists():
         raise HTTPException(status_code=409, detail="User already exists")
     port   = _next_port()
@@ -320,7 +328,7 @@ async def create_user(body: CreateUserBody, x_agent_token: str = Header(default=
 @app.delete("/users/{name}")
 async def delete_user(name: str, x_agent_token: str = Header(default="")):
     auth(x_agent_token)
-    user_dir = BASE_DIR / name
+    user_dir = _get_user_dir(name)
     if not user_dir.exists():
         raise HTTPException(status_code=404, detail="User not found")
     _dc(user_dir, "down")
@@ -346,7 +354,7 @@ def _cache_set_status(name: str, running: bool):
 @app.post("/users/{name}/start")
 async def start_user(name: str, x_agent_token: str = Header(default="")):
     auth(x_agent_token)
-    user_dir = BASE_DIR / name
+    user_dir = _get_user_dir(name)
     if not user_dir.exists():
         raise HTTPException(status_code=404, detail="User not found")
     if dclient:
@@ -374,7 +382,7 @@ async def start_user(name: str, x_agent_token: str = Header(default="")):
 @app.post("/users/{name}/stop")
 async def stop_user(name: str, x_agent_token: str = Header(default="")):
     auth(x_agent_token)
-    user_dir = BASE_DIR / name
+    user_dir = _get_user_dir(name)
     if not user_dir.exists():
         raise HTTPException(status_code=404, detail="User not found")
     if dclient:
@@ -401,7 +409,7 @@ async def stop_user(name: str, x_agent_token: str = Header(default="")):
 @app.post("/users/{name}/restart")
 async def restart_user(name: str, x_agent_token: str = Header(default="")):
     auth(x_agent_token)
-    user_dir = BASE_DIR / name
+    user_dir = _get_user_dir(name)
     if not user_dir.exists():
         raise HTTPException(status_code=404, detail="User not found")
     if dclient:

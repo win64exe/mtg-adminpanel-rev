@@ -63,6 +63,10 @@ export default function NodePage({ node, onBack, onManage, onReload }) {
               <div style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--t2)'}}>{node.base_dir}</div></div>
             <div><div style={{fontSize:11,color:'var(--t3)',marginBottom:4}}>Начальный порт</div>
               <div style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--t2)'}}>{node.start_port}</div></div>
+            {node.secret_domain && (
+              <div><div style={{fontSize:11,color:'var(--t3)',marginBottom:4}}>Secret Domain</div>
+                <div style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--vi)'}}>{node.secret_domain}</div></div>
+            )}
             {node.agent_port && (
               <div><div style={{fontSize:11,color:'var(--t3)',marginBottom:4}}>Агент</div>
                 <div style={{fontFamily:'var(--mono)',fontSize:12,color:'var(--vi)'}}>:{node.agent_port}</div></div>

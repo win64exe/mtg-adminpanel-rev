@@ -9,6 +9,7 @@ export default function NodeModal({ node, onClose, onSave }) {
     name:'', host:'', ssh_user:'root', ssh_port:22,
     base_dir:'/opt/mtg/users', start_port:4433,
     ssh_password:'', ssh_key:'', flag:null, agent_port:8081,
+    secret_domain:'',
   });
   const [loading, setLoading]         = useState(false);
   const [auth, setAuth]               = useState(node?.ssh_key ? 'key' : 'password');
@@ -92,6 +93,11 @@ export default function NodeModal({ node, onClose, onSave }) {
               <input className="form-input" placeholder="/opt/mtg/users" value={f.base_dir} onChange={e => set('base_dir', e.target.value)}/></div>
             <div className="form-group"><label className="form-label">Начальный порт</label>
               <input className="form-input" type="number" placeholder="4433" value={f.start_port} onChange={e => set('start_port', parseInt(e.target.value))}/></div>
+            <div className="form-group" style={{gridColumn:'1/-1'}}>
+              <label className="form-label">Secret Domain (маскировка)</label>
+              <input className="form-input" placeholder="google.com" value={f.secret_domain || ''}
+                onChange={e => set('secret_domain', e.target.value)}/>
+            </div>
           </div>
           <div className="form-group">
             <label className="form-label">SSH Авторизация</label>

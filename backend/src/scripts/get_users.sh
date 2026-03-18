@@ -10,8 +10,8 @@ for DIR in "$BASE"/*/; do
   [ -f "$DIR/config.toml" ] || continue
   
   NAME=$(basename "$DIR")
-  SECRET=$(grep secret "$DIR/config.toml" 2>/dev/null | awk -F'"' '{print $2}')
-  PORT=$(grep -o '[0-9]*:3128' "$DIR/docker-compose.yml" 2>/dev/null | cut -d: -f1)
+  SECRET=$(grep "secret" "$DIR/config.toml" 2>/dev/null | sed -E "s/.*['\"]([^'\"]+)['\"].*/\1/")
+  PORT=$(grep -oE "[0-9]+:3128" "$DIR/docker-compose.yml" 2>/dev/null | cut -d: -f1)
   STATUS=$(docker ps --filter "name=mtg-$NAME" --format '{{.Status}}' 2>/dev/null)
   PID=$(docker inspect --format '{{.State.Pid}}' "mtg-$NAME" 2>/dev/null)
   CONNS=0

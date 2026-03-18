@@ -66,7 +66,11 @@ function runMigrations() {
     "ALTER TABLE nodes ADD COLUMN secret_domain TEXT DEFAULT NULL",
   ];
   migrations.forEach(sql => {
-    try { db.prepare(sql).run(); } catch (_) {}
+    try { db.prepare(sql).run(); } catch (e) {
+      if (!e.message.includes('duplicate column name') && !e.message.includes('already exists')) {
+        console.warn(`[migration] warning: ${e.message}`);
+      }
+    }
   });
 }
 runMigrations();
@@ -203,11 +207,13 @@ app.post('/api/nodes', async (req, res) => {
     const node = db.prepare('SELECT * FROM nodes WHERE id = ?').get(nodeId);
     if (node.ssh_key) node.ssh_key_path = path.join(SSH_KEY_DIR, node.ssh_key);
     const RAW = 'https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent';
+    const domain = node.secret_domain || process.env.SECRET_DOMAIN || 'google.com';
     const cmd = [
       `mkdir -p /opt/mtg-agent && cd /opt/mtg-agent`,
       `wget -q "${RAW}/main.py" -O main.py || curl -fsSL "${RAW}/main.py" -o main.py`,
       `wget -q "${RAW}/docker-compose.yml" -O docker-compose.yml || curl -fsSL "${RAW}/docker-compose.yml" -o docker-compose.yml`,
       `echo "AGENT_TOKEN=${AGENT_TOKEN}" > .env`,
+      `echo "SECRET_DOMAIN=${domain}" >> .env`,
       `docker compose down 2>/dev/null || true`,
       `docker compose up -d`,
       `echo "==> Done"`
@@ -262,11 +268,13 @@ app.post('/api/nodes/:id/update-agent', async (req, res) => {
   if (!node) return res.status(404).json({ error: 'Not found' });
   if (node.ssh_key) node.ssh_key_path = path.join(SSH_KEY_DIR, node.ssh_key);
   const RAW = 'https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent';
+  const domain = node.secret_domain || process.env.SECRET_DOMAIN || 'google.com';
   const cmd = [
     `mkdir -p /opt/mtg-agent && cd /opt/mtg-agent`,
     `wget -q "${RAW}/main.py" -O main.py`,
     `wget -q "${RAW}/docker-compose.yml" -O docker-compose.yml`,
     `echo "AGENT_TOKEN=${AGENT_TOKEN}" > .env`,
+    `echo "SECRET_DOMAIN=${domain}" >> .env`,
     `docker compose down 2>/dev/null || true`,
     `docker compose up -d`,
     `echo "==> Done"`
