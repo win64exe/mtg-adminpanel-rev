@@ -35,11 +35,16 @@ echo -e "  • Systemd сервис mtg-adminpanel"
 echo ""
 echo -ne "${RED}Ты уверен? Все данные будут удалены! (y/N)${NC}: "
 IFS= read -r CONFIRM < /dev/tty
-
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
     echo -e "${DIM}Отменено.${NC}"
     exit 0
 fi
+
+echo ""
+echo -e "${YELLOW}Хочешь выполнить ПОЛНУЮ очистку Docker?${NC}"
+echo -e "  (удалит ВСЕ контейнеры, образы и volumes на сервере)"
+echo -ne "${WHITE}Очистить всё? (y/N)${NC}: "
+IFS= read -r FULL_PRUNE < /dev/tty
 
 echo ""
 
@@ -47,7 +52,15 @@ echo ""
 if [ -d "$INSTALL_DIR" ]; then
     echo -e "${CYAN}▶ Останавливаем панель...${NC}"
     cd "$INSTALL_DIR" && docker compose down 2>/dev/null
-    echo -e "${GREEN}✅ Контейнер остановлен${NC}"
+    echo -e "${GREEN}✅ Панель остановлена${NC}"
+fi
+
+if [[ "$FULL_PRUNE" == "y" || "$FULL_PRUNE" == "Y" ]]; then
+    echo -e "${CYAN}▶ Полная очистка Docker...${NC}"
+    docker stop $(docker ps -aq) 2>/dev/null
+    docker rm $(docker ps -aq) 2>/dev/null
+    docker system prune -a --volumes -f
+    echo -e "${GREEN}✅ Docker полностью очищен${NC}"
 fi
 
 # Удаляем директорию
