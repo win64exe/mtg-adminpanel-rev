@@ -138,7 +138,7 @@
 ## Быстрый старт
 
 ```bash
-git clone https://github.com/MaksimTMB/mtg-adminpanel.git /opt/mtg-adminpanel
+git clone https://github.com/win64exe/mtg-adminpanel-rev.git /opt/mtg-adminpanel
 cd /opt/mtg-adminpanel
 cp .env.example .env
 # Отредактируй .env: установи AUTH_TOKEN (пароль для входа)
@@ -154,7 +154,7 @@ docker compose up -d
 ### 1. Клонировать репозиторий
 
 ```bash
-git clone https://github.com/MaksimTMB/mtg-adminpanel.git /opt/mtg-adminpanel
+git clone https://github.com/win64exe/mtg-adminpanel-rev.git /opt/mtg-adminpanel
 cd /opt/mtg-adminpanel
 ```
 
@@ -229,7 +229,7 @@ MTG Agent — лёгкий Python FastAPI сервис, устанавливае
 ssh root@your-node.com
 
 mkdir -p /opt/mtg-agent && cd /opt/mtg-agent
-wget -q https://raw.githubusercontent.com/MaksimTMB/mtg-adminpanel/main/mtg-agent/install-agent.sh -O install.sh
+wget -q https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent/install-agent.sh -O install.sh
 bash install.sh YOUR_AGENT_TOKEN
 ```
 
@@ -242,7 +242,7 @@ bash install.sh YOUR_AGENT_TOKEN
 **Вручную на ноде:**
 ```bash
 cd /opt/mtg-agent
-wget -q https://raw.githubusercontent.com/MaksimTMB/mtg-adminpanel/main/mtg-agent/main.py -O main.py
+wget -q https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent/main.py -O main.py
 docker compose down && docker compose up -d
 ```
 
@@ -557,7 +557,7 @@ docker compose up -d --build
 ```bash
 cd /opt/mtg-agent
 docker compose down
-wget -q https://raw.githubusercontent.com/MaksimTMB/mtg-adminpanel/main/mtg-agent/main.py -O main.py
+wget -q https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent/main.py -O main.py
 docker compose up -d
 ```
 
