@@ -192,7 +192,7 @@ app.post('/api/nodes', async (req, res) => {
   if (!name || !host) return res.status(400).json({ error: 'name и host обязательны' });
   const result = db.prepare(
     'INSERT INTO nodes (name, host, ssh_user, ssh_port, ssh_key, ssh_password, base_dir, start_port, flag, agent_port, mtg_image, secret_domain) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-  ).run(name, host, ssh_user||'root', ssh_port||22, ssh_key_name||null, ssh_password||null, base_dir||'/opt/mtg/users', start_port||4433, flag||null, agent_port||8081, mtg_image||null, secret_domain||null);
+  ).run(name, host, ssh_user||'root', ssh_port||22, ssh_key_name||null, ssh_password||null, base_dir||'/opt/mtg/users', start_port||4433, flag||null, agent_port||8081, mtg_image||null, secret_domain||process.env.SECRET_DOMAIN||null);
   const nodeId = result.lastInsertRowid;
   res.json({ id: nodeId, name, host });
 

@@ -206,6 +206,7 @@ services:
       - DATA_DIR=/data
       - AUTH_TOKEN=$AUTH_TOKEN
       - AGENT_TOKEN=$AGENT_TOKEN
+      - SECRET_DOMAIN=$DOMAIN
 
   caddy:
     image: caddy:2-alpine
