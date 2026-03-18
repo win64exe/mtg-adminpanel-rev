@@ -29,7 +29,7 @@ print_header
 
 echo -e "${YELLOW}⚠️  Это удалит:${NC}"
 echo -e "  • Контейнер mtg-panel"
-echo -e "  • Директорию ${CYAN}$INSTALL_DIR${NC} (включая базу данных!)"
+echo -e "  • Директории ${CYAN}$INSTALL_DIR, /opt/mtg, /opt/mtg-agent${NC}"
 echo -e "  • Nginx конфиг mtg-panel (если есть)"
 echo -e "  • Systemd сервис mtg-adminpanel"
 echo ""
@@ -63,10 +63,12 @@ if [[ "$FULL_PRUNE" == "y" || "$FULL_PRUNE" == "Y" ]]; then
     echo -e "${GREEN}✅ Docker полностью очищен${NC}"
 fi
 
-# Удаляем директорию
-echo -e "${CYAN}▶ Удаляем файлы...${NC}"
+# Удаляем директории
+echo -e "${CYAN}▶ Удаляем файлы и директории...${NC}"
 rm -rf "$INSTALL_DIR"
-echo -e "${GREEN}✅ Директория удалена${NC}"
+rm -rf "/opt/mtg"
+rm -rf "/opt/mtg-agent"
+echo -e "${GREEN}✅ Директории удалены${NC}"
 
 # Удаляем systemd сервис
 if [ -f "/etc/systemd/system/mtg-adminpanel.service" ]; then

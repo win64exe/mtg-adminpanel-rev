@@ -120,7 +120,7 @@ delete_everything() {
     echo -e "${YELLOW}Это действие удалит:${NC}"
     echo -e "  • ВСЕ Docker контейнеры (не только панель!)"
     echo -e "  • ВСЕ Docker образы, сети и volumes"
-    echo -e "  • Директорию $INSTALL_DIR"
+    echo -e "  • Директории $INSTALL_DIR, /opt/mtg, /opt/mtg-agent"
     echo -e "  • Системные сервисы и конфиги"
     echo ""
     echo -ne "${RED}Ты уверен? Введи 'yes' для подтверждения: ${NC}"
@@ -134,13 +134,15 @@ delete_everything() {
         echo -e "${CYAN}▶ Полная очистка Docker (system prune)...${NC}"
         docker system prune -a --volumes -f
         
-        echo -e "${CYAN}▶ Удаление файлов панели...${NC}"
+        echo -e "${CYAN}▶ Удаление файлов и директорий...${NC}"
         if [ -f "/etc/systemd/system/mtg-adminpanel.service" ]; then
             systemctl disable mtg-adminpanel 2>/dev/null
             rm -f /etc/systemd/system/mtg-adminpanel.service
             systemctl daemon-reload
         fi
         rm -rf "$INSTALL_DIR"
+        rm -rf "/opt/mtg"
+        rm -rf "/opt/mtg-agent"
         
         echo -e "${GREEN}✅ Система полностью очищена!${NC}"
     else
