@@ -649,7 +649,30 @@ function useToast() {
   return toasts;
 }
 const toast = (msg, type) => _toast && _toast(msg, type);
-const copyText = (txt) => navigator.clipboard.writeText(txt).then(() => toast('Скопировано!', 'success'));
+
+const copyText = (txt) => {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(txt).then(() => toast('Скопировано!', 'success')).catch(() => {
+      // Fallback if clipboard fails
+      const el = document.createElement('textarea');
+      el.value = txt;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      toast('Скопировано!', 'success');
+    });
+  } else {
+    // Legacy fallback
+    const el = document.createElement('textarea');
+    el.value = txt;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    toast('Скопировано!', 'success');
+  }
+};
 
 function Toasts({ list }) {
   const icon = { success: <I.Check/>, error: <I.AlertCircle/>, info: <I.Info/> };
@@ -667,10 +690,9 @@ function Login({ onLogin }) {
     e.preventDefault(); if(!tok.trim()) return;
     setLoading(true);
     try {
-      setToken(tok);
       const s = await fetch('/api/totp/status', { headers:{'x-auth-token':tok} }).then(r=>r.json());
-      if(s.enabled) { setStep('totp'); }
-      else { await api('GET','/api/nodes'); toast('Вход выполнен','success'); onLogin(tok); }
+      if(s.enabled) { setToken(tok); setStep('totp'); }
+      else { setToken(tok); await api('GET','/api/nodes'); toast('Вход выполнен','success'); onLogin(tok); }
     } catch { setToken(''); toast('Неверный токен','error'); }
     finally { setLoading(false); }
   };
