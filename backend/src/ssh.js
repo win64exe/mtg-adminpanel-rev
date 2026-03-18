@@ -91,6 +91,19 @@ function sshExec(node, command) {
   });
 }
 
+function shQuote(value) {
+  const s = String(value ?? '');
+  return `'${s.replace(/'/g, `'\"'\"'`)}'`;
+}
+
+async function runRemoteScript(node, scriptPath, args = []) {
+  const script = fs.readFileSync(scriptPath, 'utf8');
+  const scriptB64 = Buffer.from(script, 'utf8').toString('base64');
+  const argStr = args.map(shQuote).join(' ');
+  const cmd = `echo ${shQuote(scriptB64)} | base64 -d | sh -s -- ${argStr}`;
+  return sshExec(node, cmd);
+}
+
 async function checkNode(node) {
   if (node.agent_port) {
     const ok = await checkAgentHealth(node);
@@ -152,15 +165,15 @@ async function getRemoteUsers(node) {
   }
   // SSH fallback
   try {
-    const script = fs.readFileSync(path.join(__dirname, 'scripts/get_users.sh'), 'utf8');
-    const cmd = `${script} ${node.base_dir}`;
-    const r = await sshExec(node, cmd);
+    const scriptPath = path.join(__dirname, 'scripts/get_users.sh');
+    const r = await runRemoteScript(node, scriptPath, [node.base_dir || '/opt/mtg/users']);
     const users = [];
     for (const line of r.output.split('\n')) {
       if (!line.startsWith('USER|')) continue;
       const [, name, port, secret, status, conns] = line.split('|');
       if (!name) continue;
-      users.push({ name, port: parseInt(port), secret, status, connections: parseInt(conns) || 0 });
+      const parsedPort = parseInt(port, 10);
+      users.push({ name, port: Number.isFinite(parsedPort) ? parsedPort : null, secret, status, connections: parseInt(conns) || 0 });
     }
     return users;
   } catch {
@@ -207,14 +220,16 @@ async function createRemoteUser(node, name) {
   const startPort = node.start_port || 4433;
   const mtgImage = node.mtg_image || process.env.MTG_IMAGE || 'nineseconds/mtg:2';
   const secretDomain = node.secret_domain || process.env.SECRET_DOMAIN || 'google.com';
-  const script = fs.readFileSync(path.join(__dirname, 'scripts/create_user.sh'), 'utf8');
-  const cmd = `${script} ${baseDir} ${name} ${startPort} ${mtgImage} ${secretDomain}`;
-  const r = await sshExec(node, cmd);
+  const scriptPath = path.join(__dirname, 'scripts/create_user.sh');
+  const r = await runRemoteScript(node, scriptPath, [baseDir, name, startPort, mtgImage, secretDomain]);
   if (r.output.includes('EXISTS')) throw new Error('User already exists on node');
   const okLine = r.output.split('\n').find(l => l.startsWith('OK|'));
   if (!okLine) throw new Error('Failed to create user: ' + r.output);
   const parts = okLine.split('|');
-  return { port: parseInt(parts[2]), secret: parts[3] };
+  const createdPort = parseInt(parts[2], 10);
+  if (!Number.isFinite(createdPort)) throw new Error('Failed to create user: invalid port from node');
+  if (!parts[3]) throw new Error('Failed to create user: empty secret from node');
+  return { port: createdPort, secret: parts[3] };
 }
 
 async function removeRemoteUser(node, name) {
