@@ -3,6 +3,8 @@ services:
     build: .
     container_name: mtg-panel
     restart: unless-stopped
+    ports:
+      - "3000:3000" # Добавляем обратно для локального доступа и отладки
     volumes:
       - ./data:/data
       - ./ssh_keys:/ssh_keys:ro

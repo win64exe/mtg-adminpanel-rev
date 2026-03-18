@@ -2,10 +2,11 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
-const db      = require('./db');
-const ssh     = require('./ssh');
-const nodeCache = require('./nodeCache');
-const authenticator = require('./totp');
+const { authenticator } = require('otplib');
+const qrcode        = require('qrcode');
+const db            = require('./db');
+const ssh           = require('./ssh');
+const nodeCache     = require('./nodeCache');
 
 // ── Config ────────────────────────────────────────────────
 const AUTH_TOKEN = process.env.AUTH_TOKEN;
@@ -25,6 +26,18 @@ const PORT       = process.env.PORT || 3000;
 // Version: /app/src/app.js → ../package.json = /app/package.json = backend/package.json in Docker
 let pkgVersion = 'unknown';
 try { pkgVersion = require('../package.json').version; } catch (_) {}
+
+// ── TOTP Cache ────────────────────────────────────────────
+// In-memory TOTP cache — avoids a DB hit on every API request
+let _totpCache = null;
+function _loadTotpCache() {
+  const secret  = db.prepare("SELECT value FROM settings WHERE key='totp_secret'").get();
+  const enabled = db.prepare("SELECT value FROM settings WHERE key='totp_enabled'").get();
+  _totpCache = { secret: secret ? secret.value : null, enabled: enabled && enabled.value === '1' };
+}
+function _invalidateTotpCache() { _totpCache = null; }
+function getTotpSecret()  { if (!_totpCache) _loadTotpCache(); return _totpCache.secret; }
+function isTotpEnabled()  { if (!_totpCache) _loadTotpCache(); return _totpCache.enabled; }
 
 // ── DB Migrations ─────────────────────────────────────────
 function runMigrations() {
@@ -88,34 +101,20 @@ app.use('/api', (req, res, next) => {
 // ── TOTP 2FA ──────────────────────────────────────────────
 const TOTP_ISSUER = 'MTG Panel';
 
-// In-memory TOTP cache — avoids a DB hit on every API request
-let _totpCache = null;
-function _loadTotpCache() {
-  const secret  = db.prepare("SELECT value FROM settings WHERE key='totp_secret'").get();
-  const enabled = db.prepare("SELECT value FROM settings WHERE key='totp_enabled'").get();
-  _totpCache = { secret: secret ? secret.value : null, enabled: enabled && enabled.value === '1' };
-}
-function _invalidateTotpCache() { _totpCache = null; }
-function getTotpSecret()  { if (!_totpCache) _loadTotpCache(); return _totpCache.secret; }
-function isTotpEnabled()  { if (!_totpCache) _loadTotpCache(); return _totpCache.enabled; }
-
 app.get('/api/totp/status', (req, res) => {
-  const token = req.headers['x-auth-token'];
-  if (token !== AUTH_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
   res.json({ enabled: isTotpEnabled() });
 });
+
 app.post('/api/totp/setup', async (req, res) => {
-  const token = req.headers['x-auth-token'];
-  if (token !== AUTH_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
   const secret = authenticator.generateSecret();
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('totp_secret', ?)").run(secret);
   db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('totp_enabled', '0')").run();
   _invalidateTotpCache();
-  res.json({ secret, qr: authenticator.keyuri('admin', TOTP_ISSUER, secret) });
+  const qr = await qrcode.toDataURL(authenticator.keyuri('admin', TOTP_ISSUER, secret));
+  res.json({ secret, qr });
 });
+
 app.post('/api/totp/verify', (req, res) => {
-  const token = req.headers['x-auth-token'];
-  if (token !== AUTH_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
   const { code } = req.body;
   const secret = getTotpSecret();
   if (!secret) return res.status(400).json({ error: 'Setup first' });
@@ -125,9 +124,8 @@ app.post('/api/totp/verify', (req, res) => {
     res.json({ ok: true });
   } else { res.status(400).json({ error: 'Invalid code' }); }
 });
+
 app.post('/api/totp/disable', (req, res) => {
-  const token = req.headers['x-auth-token'];
-  if (token !== AUTH_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
   const { code } = req.body;
   const secret = getTotpSecret();
   if (secret && !authenticator.verify(code, secret)) {
