@@ -57,8 +57,10 @@ echo ""
 
 # AUTH_TOKEN
 while true; do
-    echo -ne "${WHITE}Токен авторизации${NC} ${DIM}(придумай пароль для входа в панель)${NC}: "
-    IFS= read -r AUTH_TOKEN < /dev/tty
+    DEFAULT_AUTH=$(openssl rand -hex 12)
+    echo -ne "${WHITE}Токен авторизации${NC} ${DIM}(пароль для входа)${NC} [${CYAN}${DEFAULT_AUTH}${NC}]: "
+    IFS= read -r AUTH_INPUT < /dev/tty
+    AUTH_TOKEN=${AUTH_INPUT:-$DEFAULT_AUTH}
     if [ ${#AUTH_TOKEN} -ge 6 ]; then
         break
     else
