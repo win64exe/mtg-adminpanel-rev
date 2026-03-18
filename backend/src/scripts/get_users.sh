@@ -2,8 +2,13 @@
 
 BASE=$1
 
-for DIR in $BASE/*/; do
-  [ -d "$DIR" ] || continue
+# Ensure BASE exists
+[ -d "$BASE" ] || exit 0
+
+for DIR in "$BASE"/*/; do
+  # Check if directory is actually a proxy user directory (must contain config.toml)
+  [ -f "$DIR/config.toml" ] || continue
+  
   NAME=$(basename "$DIR")
   SECRET=$(grep secret "$DIR/config.toml" 2>/dev/null | awk -F'"' '{print $2}')
   PORT=$(grep -o '[0-9]*:3128' "$DIR/docker-compose.yml" 2>/dev/null | cut -d: -f1)

@@ -139,7 +139,11 @@ def _compute_all() -> list:
             name = c.name[4:]  # strip "mtg-" prefix
             # Try to read config from BASE_DIR; gracefully ignore if not found
             user_dir = BASE_DIR / name
-            cfg = _read_config(user_dir) if user_dir.is_dir() else {"secret": None, "port": None}
+            if not user_dir.is_dir() or not (user_dir / "config.toml").exists():
+                print(f"[compute]   {name}: skipping, not a user dir in {BASE_DIR}")
+                continue
+                
+            cfg = _read_config(user_dir)
             # Fallback: read port from container port bindings
             if cfg["port"] is None:
                 try:
@@ -166,7 +170,7 @@ def _compute_all() -> list:
         # CLI fallback when Docker SDK unavailable: scan BASE_DIR + docker inspect
         BASE_DIR.mkdir(parents=True, exist_ok=True)
         for user_dir in sorted(BASE_DIR.iterdir()):
-            if not user_dir.is_dir():
+            if not user_dir.is_dir() or not (user_dir / "config.toml").exists():
                 continue
             name    = user_dir.name
             cfg     = _read_config(user_dir)
