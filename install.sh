@@ -193,6 +193,8 @@ EOF
 
     # Обновляем docker-compose.yml для работы с Caddy
     cat > "$INSTALL_DIR/docker-compose.yml" << EOF
+name: mtg-panel
+
 services:
   mtg-panel:
     build: .
