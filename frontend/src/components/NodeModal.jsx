@@ -57,7 +57,7 @@ export default function NodeModal({ node, onClose, onSave }) {
     finally { setAgentUpdating(false); }
   };
 
-  const installCmd = `mkdir -p /opt/mtg-agent && cd /opt/mtg-agent && curl -fsSL https://raw.githubusercontent.com/MaksimTMB/mtg-adminpanel/dev/mtg-agent/install-agent.sh | bash`;
+  const installCmd = `mkdir -p /opt/mtg-agent && cd /opt/mtg-agent && curl -fsSL https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent/install-agent.sh | bash`;
 
   return (
     <div className="overlay" onClick={e => e.target === e.currentTarget && onClose()}>

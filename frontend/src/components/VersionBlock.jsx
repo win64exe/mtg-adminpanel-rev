@@ -50,7 +50,7 @@ export default function VersionBlock({ nodes, panelVersion }) {
   const checkLatestRelease = useCallback(async () => {
     setCheckingRelease(true);
     try {
-      const r = await fetch('https://api.github.com/repos/MaksimTMB/mtg-adminpanel/releases/latest');
+      const r = await fetch('https://api.github.com/repos/win64exe/mtg-adminpanel-rev/releases/latest');
       const data = await r.json();
       if (data.tag_name) setLatestRelease({ tag: data.tag_name, url: data.html_url });
     } catch {}
@@ -130,7 +130,7 @@ export default function VersionBlock({ nodes, panelVersion }) {
                         <I.Download/> {latestRelease.tag}
                       </a>
                     )}
-                    <a href="https://github.com/MaksimTMB/mtg-adminpanel/releases" target="_blank"
+                    <a href="https://github.com/win64exe/mtg-adminpanel-rev/releases" target="_blank"
                       className="btn btn-ghost btn-sm" style={{textDecoration:'none'}}>
                       Релизы
                     </a>

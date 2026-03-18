@@ -201,7 +201,7 @@ app.post('/api/nodes', async (req, res) => {
   if ((ssh_key_name || ssh_password) && auto_install_agent !== false) {
     const node = db.prepare('SELECT * FROM nodes WHERE id = ?').get(nodeId);
     if (node.ssh_key) node.ssh_key_path = path.join(SSH_KEY_DIR, node.ssh_key);
-    const RAW = 'https://raw.githubusercontent.com/MaksimTMB/mtg-adminpanel/claude/fix-production-bugs-h4e08/mtg-agent';
+    const RAW = 'https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent';
     const cmd = [
       `mkdir -p /opt/mtg-agent && cd /opt/mtg-agent`,
       `wget -q "${RAW}/main.py" -O main.py || curl -fsSL "${RAW}/main.py" -o main.py`,
@@ -260,7 +260,7 @@ app.post('/api/nodes/:id/update-agent', async (req, res) => {
   const node = db.prepare('SELECT * FROM nodes WHERE id = ?').get(req.params.id);
   if (!node) return res.status(404).json({ error: 'Not found' });
   if (node.ssh_key) node.ssh_key_path = path.join(SSH_KEY_DIR, node.ssh_key);
-  const RAW = 'https://raw.githubusercontent.com/MaksimTMB/mtg-adminpanel/claude/fix-production-bugs-h4e08/mtg-agent';
+  const RAW = 'https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent';
   const cmd = [
     `mkdir -p /opt/mtg-agent && cd /opt/mtg-agent`,
     `wget -q "${RAW}/main.py" -O main.py`,
