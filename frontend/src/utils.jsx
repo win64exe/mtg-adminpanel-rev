@@ -1,10 +1,24 @@
 export const flagUrl = (code, size = 'w40') =>
   code ? `https://flagcdn.com/${size}/${code}.png` : null;
 
-export const copyText = (txt) =>
-  navigator.clipboard.writeText(txt).then(() => {
-    // toast imported dynamically to avoid circular deps — caller handles it
+export const copyText = (txt, toast) => {
+  const doCopy = () => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(txt);
+    } else {
+      const el = document.createElement('textarea');
+      el.value = txt;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      return Promise.resolve();
+    }
+  };
+  doCopy().then(() => {
+    if (toast) toast('Скопировано!', 'success');
   });
+};
 
 export function expiryBadge(expires_at, small) {
   if (!expires_at) return <span style={{color:'var(--t3)',fontSize:small?11:12}}>∞</span>;

@@ -15,10 +15,9 @@ export default function Login({ onLogin }) {
     if (!tok.trim()) return;
     setLoading(true);
     try {
-      setToken(tok);
       const s = await fetch('/api/totp/status', { headers: { 'x-auth-token': tok } }).then(r => r.json());
-      if (s.enabled) { setStep('totp'); }
-      else { await api('GET', '/api/nodes'); toast('Вход выполнен', 'success'); onLogin(tok); }
+      if (s.enabled) { setToken(tok); setStep('totp'); }
+      else { setToken(tok); await api('GET', '/api/nodes'); toast('Вход выполнен', 'success'); onLogin(tok); }
     } catch { setToken(''); toast('Неверный токен', 'error'); }
     finally { setLoading(false); }
   };

@@ -60,6 +60,8 @@ function runMigrations() {
     "ALTER TABLE users ADD COLUMN total_traffic_rx_bytes INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN total_traffic_tx_bytes INTEGER DEFAULT 0",
     "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'active'",
+    "ALTER TABLE users ADD COLUMN port INTEGER DEFAULT NULL",
+    "ALTER TABLE users ADD COLUMN secret TEXT DEFAULT NULL",
     "ALTER TABLE nodes ADD COLUMN mtg_image TEXT DEFAULT NULL",
     "ALTER TABLE nodes ADD COLUMN secret_domain TEXT DEFAULT NULL",
   ];

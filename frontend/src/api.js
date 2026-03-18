@@ -1,9 +1,17 @@
-export const getToken    = () => localStorage.getItem('mtg_token') || '';
-export const setToken    = (t) => localStorage.setItem('mtg_token', t);
-export const getTotpCode = () => sessionStorage.getItem('mtg_totp') || '';
+const safeStorage = {
+  getItem: (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  setItem: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} },
+  sessionGet: (k) => { try { return sessionStorage.getItem(k); } catch (e) { return null; } },
+  sessionSet: (k, v) => { try { sessionStorage.setItem(k, v); } catch (e) {} },
+  sessionRemove: (k) => { try { sessionStorage.removeItem(k); } catch (e) {} },
+};
+
+export const getToken    = () => safeStorage.getItem('mtg_token') || '';
+export const setToken    = (t) => safeStorage.setItem('mtg_token', t);
+export const getTotpCode = () => safeStorage.sessionGet('mtg_totp') || '';
 export const setTotpCode = (c) => {
-  if (c) sessionStorage.setItem('mtg_totp', c);
-  else   sessionStorage.removeItem('mtg_totp');
+  if (c) safeStorage.sessionSet('mtg_totp', c);
+  else   safeStorage.sessionRemove('mtg_totp');
 };
 
 // Global handler called when any request gets TOTP_REQUIRED (e.g. after enabling 2FA mid-session)

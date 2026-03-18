@@ -30,6 +30,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     node_id INTEGER NOT NULL,
     name TEXT NOT NULL,
+    port INTEGER,
+    secret TEXT,
     note TEXT,
     expires_at DATETIME,
     traffic_limit_gb INTEGER,
