@@ -135,17 +135,15 @@ fi
 # ── Клонирование репозитория ─────────────────────────────────
 print_step "Загрузка MTG AdminPanel..."
 if [ -d "$INSTALL_DIR" ]; then
-    if [ -d "$INSTALL_DIR/.git" ]; then
-        print_warn "Директория $INSTALL_DIR уже существует — обновляем..."
-        cd "$INSTALL_DIR" && git pull -q
-    else
-        print_warn "Директория $INSTALL_DIR существует но не является git репо — переустанавливаем..."
-        rm -rf "$INSTALL_DIR"
-        git clone -q https://github.com/win64exe/mtg-adminpanel-rev.git "$INSTALL_DIR"
-    fi
-else
-    git clone -q https://github.com/win64exe/mtg-adminpanel-rev.git "$INSTALL_DIR"
+    print_warn "Директория $INSTALL_DIR уже существует — полная переустановка..."
+    cd "$INSTALL_DIR" && docker compose down &>/dev/null || true
+    # Удаляем всё кроме папок с данными, если они нужны, но для "чистой" лучше удалить всё
+    # Чтобы сохранить данные (БД и ключи), можно не удалять папки data и ssh_keys
+    # Но пользователь просил "все очищалось и удалялось"
+    cd /tmp && rm -rf "$INSTALL_DIR"
 fi
+
+git clone -q https://github.com/win64exe/mtg-adminpanel-rev.git "$INSTALL_DIR"
 print_ok "Репозиторий загружен"
 
 # ── Создание .env ────────────────────────────────────────────
