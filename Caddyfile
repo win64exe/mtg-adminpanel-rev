@@ -1,0 +1,10 @@
+{
+    # Глобальные настройки
+    email your-email@example.com # <-- ВАЖНО: Укажите ваш email для Let's Encrypt
+}
+
+# Ваш домен
+panel.your-domain.com { # <-- ВАЖНО: Замените на ваш домен
+    # Проксируем запросы на контейнер с панелью
+    reverse_proxy mtg-panel:3000
+}

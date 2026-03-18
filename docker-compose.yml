@@ -1,0 +1,27 @@
+services:
+  mtg-panel:
+    image: ghcr.io/maksimtmb/mtg-adminpanel:latest
+    container_name: mtg-panel
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+      - ./ssh_keys:/ssh_keys:ro
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+      - AUTH_TOKEN=${AUTH_TOKEN}
+      - AGENT_TOKEN=${AGENT_TOKEN}
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+
+volumes:
+  caddy_data:

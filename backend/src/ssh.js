@@ -1,0 +1,279 @@
+const { Client } = require('ssh2');
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const AGENT_TOKEN = process.env.AGENT_TOKEN;
+
+// ── Agent HTTP client ──────────────────────────────────────
+function agentRequest(host, port, path, method = 'GET', body = null) {
+  return new Promise((resolve, reject) => {
+    const payload = body ? JSON.stringify(body) : null;
+    const req = http.request({
+      hostname: host,
+      port: parseInt(port),
+      path,
+      method,
+      headers: {
+        'x-agent-token': AGENT_TOKEN,
+        ...(payload ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } : {}),
+      },
+    }, res => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
+        catch { reject(new Error('Invalid JSON from agent')); }
+      });
+    });
+    req.setTimeout(4000, () => { req.destroy(); reject(new Error('Agent timeout')); });
+    req.on('error', reject);
+    if (payload) req.write(payload);
+    req.end();
+  });
+}
+
+async function agentGet(node, path) {
+  const r = await agentRequest(node.host, node.agent_port, path, 'GET');
+  if (r.status >= 400) throw new Error(r.body?.detail || `Agent error ${r.status}`);
+  return r.body;
+}
+
+async function agentPost(node, path, body = null) {
+  const r = await agentRequest(node.host, node.agent_port, path, 'POST', body);
+  if (r.status >= 400) throw new Error(r.body?.detail || `Agent error ${r.status}`);
+  return r.body;
+}
+
+async function agentDelete(node, path) {
+  const r = await agentRequest(node.host, node.agent_port, path, 'DELETE');
+  if (r.status >= 400) throw new Error(r.body?.detail || `Agent error ${r.status}`);
+  return r.body;
+}
+
+async function checkAgentHealth(node) {
+  if (!node.agent_port) return false;
+  try {
+    const data = await agentGet(node, '/health');
+    return data.status === 'ok';
+  } catch {
+    return false;
+  }
+}
+
+// ── SSH exec ───────────────────────────────────────────────
+function sshExec(node, command) {
+  return new Promise((resolve, reject) => {
+    const conn = new Client();
+    let output = '';
+    let errOutput = '';
+
+    const config = {
+      host: node.host,
+      port: node.ssh_port || 22,
+      username: node.ssh_user || 'root',
+      readyTimeout: 3000,
+    };
+
+    if (node.ssh_key_path) config.privateKey = require('fs').readFileSync(node.ssh_key_path);
+    else if (node.ssh_password) config.password = node.ssh_password;
+
+    conn.on('ready', () => {
+      conn.exec(command, (err, stream) => {
+        if (err) { conn.end(); return reject(err); }
+        stream.on('data', d => { output += d.toString(); });
+        stream.stderr.on('data', d => { errOutput += d.toString(); });
+        stream.on('close', () => { conn.end(); resolve({ output: output.trim(), error: errOutput.trim() }); });
+      });
+    });
+    conn.on('error', err => reject(err));
+    conn.connect(config);
+  });
+}
+
+async function checkNode(node) {
+  if (node.agent_port) {
+    const ok = await checkAgentHealth(node);
+    if (ok) return true;
+  }
+  try {
+    const r = await sshExec(node, 'echo ok');
+    return r.output === 'ok';
+  } catch {
+    return false;
+  }
+}
+
+async function getNodeStatus(node) {
+  // Agent-first: fast HTTP call (data comes from agent cache — < 10ms)
+  if (node.agent_port) {
+    try {
+      const data = await agentGet(node, '/metrics');
+      const containers = data.containers || [];
+      const running     = containers.filter(c => c.running).length;
+      const online_users = containers.filter(c => (c.connections || 0) > 0).length;
+      return { online: true, containers: running, online_users, via_agent: true };
+    } catch {}
+  }
+  // SSH fallback (slow — only when no agent)
+  try {
+    const r = await sshExec(node, "COUNT=$(docker ps --filter 'name=mtg-' --format '{{.Names}}' 2>/dev/null | grep -v mtg-agent | wc -l); echo \"ONLINE|$COUNT\"");
+    if (r.output.startsWith('ONLINE|')) {
+      const count = parseInt(r.output.split('|')[1]) || 0;
+      return { online: true, containers: count, online_users: 0 };
+    }
+    return { online: false, containers: 0, online_users: 0 };
+  } catch {
+    return { online: false, containers: 0, online_users: 0 };
+  }
+}
+
+async function getRemoteUsers(node) {
+  // Agent v2: returns port+secret from config files
+  if (node.agent_port) {
+    try {
+      const users = await agentGet(node, '/users');
+      // Only trust agent result if it actually returned users.
+      // Empty array means agent's BASE_DIR doesn't match the real user directory
+      // (agent can't see users there) — fall through to SSH which reads the real path.
+      if (Array.isArray(users) && users.length > 0) {
+        return users.map(u => ({
+          name:        u.name,
+          port:        u.port,
+          secret:      u.secret,
+          status:      u.running ? 'Up' : 'stopped',
+          running:     u.running || false,
+          connections: u.connections || 0,
+          traffic:     u.traffic   || null,
+          via_agent:   true,
+        }));
+      }
+    } catch {}
+  }
+  // SSH fallback
+  try {
+    const script = fs.readFileSync(path.join(__dirname, 'scripts/get_users.sh'), 'utf8');
+    const cmd = `${script} ${node.base_dir}`;
+    const r = await sshExec(node, cmd);
+    const users = [];
+    for (const line of r.output.split('\n')) {
+      if (!line.startsWith('USER|')) continue;
+      const [, name, port, secret, status, conns] = line.split('|');
+      if (!name) continue;
+      users.push({ name, port: parseInt(port), secret, status, connections: parseInt(conns) || 0 });
+    }
+    return users;
+  } catch {
+    return [];
+  }
+}
+
+async function getTraffic(node) {
+  // Agent-first
+  if (node.agent_port) {
+    try {
+      const users = await agentGet(node, '/users');
+      if (Array.isArray(users)) {
+        const result = {};
+        for (const u of users) {
+          result[u.name] = { rx: u.traffic?.rx || '0B', tx: u.traffic?.tx || '0B' };
+        }
+        return result;
+      }
+    } catch {}
+  }
+  // SSH fallback: docker stats is too slow (~2s per container), skip it
+  return {};
+}
+
+async function createRemoteUser(node, name) {
+  // Agent-first: create via HTTP (fast, no SSH)
+  if (node.agent_port) {
+    try {
+      const r = await agentPost(node, '/users', { name });
+      return { port: r.port, secret: r.secret };
+    } catch (e) {
+      if (e.message && e.message.includes('already exists')) throw new Error('User already exists on node');
+      // Fall through to SSH only if agent is unavailable (connection error)
+      if (!e.message.includes('already exists') && !e.message.includes('Invalid')) {
+        // Network error — try SSH
+      } else {
+        throw e;
+      }
+    }
+  }
+  // SSH fallback
+  const baseDir = node.base_dir;
+  const startPort = node.start_port || 4433;
+  const mtgImage = node.mtg_image || process.env.MTG_IMAGE || 'nineseconds/mtg:2';
+  const secretDomain = node.secret_domain || process.env.SECRET_DOMAIN || 'google.com';
+  const script = fs.readFileSync(path.join(__dirname, 'scripts/create_user.sh'), 'utf8');
+  const cmd = `${script} ${baseDir} ${name} ${startPort} ${mtgImage} ${secretDomain}`;
+  const r = await sshExec(node, cmd);
+  if (r.output.includes('EXISTS')) throw new Error('User already exists on node');
+  const okLine = r.output.split('\n').find(l => l.startsWith('OK|'));
+  if (!okLine) throw new Error('Failed to create user: ' + r.output);
+  const parts = okLine.split('|');
+  return { port: parseInt(parts[2]), secret: parts[3] };
+}
+
+async function removeRemoteUser(node, name) {
+  if (node.agent_port) {
+    try {
+      await agentDelete(node, `/users/${name}`);
+      return;
+    } catch (e) {
+      if (!e.message.includes('timeout') && !e.message.includes('ECONNREFUSED')) throw e;
+    }
+  }
+  // SSH fallback
+  const cmd = [
+    'BASE=' + node.base_dir, 'NAME=' + name, 'USER_DIR="$BASE/$NAME"',
+    'if [ -d "$USER_DIR" ]; then cd "$USER_DIR" && docker compose down 2>/dev/null; rm -rf "$USER_DIR"; fi',
+    'echo DONE'
+  ].join('\n');
+  await sshExec(node, cmd);
+}
+
+async function stopRemoteUser(node, name) {
+  if (node.agent_port) {
+    try {
+      await agentPost(node, `/users/${name}/stop`);
+      return;
+    } catch (_) {
+      // Agent failed or doesn't know this user — always fall through to SSH
+    }
+  }
+  await sshExec(node, 'cd ' + node.base_dir + '/' + name + ' && docker compose stop 2>/dev/null');
+}
+
+async function startRemoteUser(node, name) {
+  if (node.agent_port) {
+    try {
+      await agentPost(node, `/users/${name}/start`);
+      return;
+    } catch (_) {
+      // Agent failed or doesn't know this user — always fall through to SSH
+    }
+  }
+  await sshExec(node, 'cd ' + node.base_dir + '/' + name + ' && docker compose up -d 2>/dev/null');
+}
+
+async function restartRemoteUser(node, name) {
+  if (node.agent_port) {
+    try {
+      await agentPost(node, `/users/${name}/restart`);
+      return;
+    } catch (_) {
+      // Agent failed or doesn't know this user — always fall through to SSH
+    }
+  }
+  await sshExec(node, `cd ${node.base_dir}/${name} && docker compose stop 2>/dev/null; docker compose up -d 2>/dev/null`);
+}
+
+module.exports = {
+  sshExec, checkNode, checkAgentHealth,
+  agentGetPublic: agentGet,
+  getNodeStatus, getRemoteUsers, getTraffic,
+  createRemoteUser, removeRemoteUser, stopRemoteUser, startRemoteUser, restartRemoteUser,
+};
