@@ -37,7 +37,7 @@
     ```yaml
     services:
       mtg-panel:
-        image: ghcr.io/maksimtmb/mtg-adminpanel:latest
+        build: . # Сборка из локальных файлов (рекомендуется)
         container_name: mtg-panel
         restart: unless-stopped
         ports:
@@ -167,7 +167,7 @@
     ```yaml
     services:
       mtg-panel:
-        image: ghcr.io/maksimtmb/mtg-adminpanel:latest
+        build: .
         container_name: mtg-panel
         restart: unless-stopped
         volumes:

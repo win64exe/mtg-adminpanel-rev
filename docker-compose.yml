@@ -1,6 +1,6 @@
 services:
   mtg-panel:
-    image: ghcr.io/maksimtmb/mtg-adminpanel:latest
+    build: .
     container_name: mtg-panel
     restart: unless-stopped
     volumes:
