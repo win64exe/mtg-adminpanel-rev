@@ -77,7 +77,7 @@ PORT=${PORT_INPUT:-3000}
 echo ""
 echo -e "${WHITE}Нужен ли SSL?${NC}"
 echo -e "  ${CYAN}[1]${NC} Нет — только HTTP (http://IP:$PORT)"
-echo -e "  ${CYAN}[2]${NC} Да — через Nginx + Let's Encrypt (нужен домен)"
+echo -e "  ${CYAN}[2]${NC} Да — через Caddy (авто-HTTPS, нужен домен)"
 echo -ne "  Выбор ${DIM}[1]${NC}: "
 IFS= read -r SSL_CHOICE < /dev/tty
 SSL_CHOICE=${SSL_CHOICE:-1}
@@ -177,62 +177,54 @@ else
     exit 1
 fi
 
-# ── Настройка Nginx + SSL ────────────────────────────────────
+# ── Настройка SSL (Caddy) ────────────────────────────────────
 if [ "$SSL_CHOICE" == "2" ] && [ -n "$DOMAIN" ]; then
+    print_step "Настройка Caddy..."
+    
+    cat > "$INSTALL_DIR/Caddyfile" << EOF
+{
+    email $EMAIL
+}
 
-    print_step "Установка Nginx..."
-    apt-get install -y -qq nginx
-    print_ok "Nginx установлен"
-
-    print_step "Получение SSL сертификата для $DOMAIN..."
-    apt-get install -y -qq certbot python3-certbot-nginx
-
-    # Временный конфиг для certbot
-    cat > "/etc/nginx/sites-available/mtg-panel" << EOF
-server {
-    listen 80;
-    server_name $DOMAIN;
-    location / { return 200 'ok'; }
+$DOMAIN {
+    reverse_proxy mtg-panel:3000
 }
 EOF
-    ln -sf /etc/nginx/sites-available/mtg-panel /etc/nginx/sites-enabled/
-    nginx -t -q && systemctl reload nginx
 
-    certbot certonly --nginx -d "$DOMAIN" --email "$EMAIL" --agree-tos --non-interactive -q
+    # Обновляем docker-compose.yml для работы с Caddy
+    cat > "$INSTALL_DIR/docker-compose.yml" << EOF
+services:
+  mtg-panel:
+    build: .
+    container_name: mtg-panel
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+      - ./ssh_keys:/ssh_keys:ro
+    environment:
+      - PORT=3000
+      - DATA_DIR=/data
+      - AUTH_TOKEN=$AUTH_TOKEN
+      - AGENT_TOKEN=$AGENT_TOKEN
 
-    if [ $? -eq 0 ]; then
-        print_ok "SSL сертификат получен"
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
 
-        # Финальный конфиг Nginx
-        cat > "/etc/nginx/sites-available/mtg-panel" << EOF
-server {
-    listen 80;
-    server_name $DOMAIN;
-    return 301 https://\$host\$request_uri;
-}
-
-server {
-    listen 8443 ssl;
-    server_name $DOMAIN;
-
-    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-
-    location / {
-        proxy_pass http://localhost:$PORT;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-}
+volumes:
+  caddy_data:
 EOF
-        nginx -t -q && systemctl reload nginx
-        print_ok "Nginx настроен с SSL"
-    else
-        print_warn "Не удалось получить SSL. Проверь что домен $DOMAIN указывает на этот сервер."
-    fi
+    
+    cd "$INSTALL_DIR"
+    docker compose up -d --build caddy
+    print_ok "Caddy настроен и запущен"
 fi
 
 # ── Автозапуск ───────────────────────────────────────────────
@@ -266,7 +258,7 @@ echo -e "${CYAN}╚════════════════════�
 echo ""
 
 if [ "$SSL_CHOICE" == "2" ] && [ -n "$DOMAIN" ]; then
-    echo -e "  🌐 Панель:  ${CYAN}https://$DOMAIN:8443${NC}"
+    echo -e "  🌐 Панель:  ${CYAN}https://$DOMAIN${NC}"
 else
     IP=$(curl -s -4 ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
     echo -e "  🌐 Панель:  ${CYAN}http://$IP:$PORT${NC}"
