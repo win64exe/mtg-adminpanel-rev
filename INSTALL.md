@@ -58,7 +58,7 @@ wget -q https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/insta
 2.  Найдите раздел **"MTG Agent"** и нажмите **"Установить"**.
 3.  Скопируйте предложенную команду. Она будет выглядеть примерно так:
     ```bash
-    mkdir -p /opt/mtg-agent && cd /opt/mtg-agent && curl -fsSL https://raw.githubusercontent.com/MaksimTMB/mtg-adminpanel/dev/mtg-agent/install-agent.sh | bash
+    mkdir -p /opt/mtg-agent && cd /opt/mtg-agent && curl -fsSL https://raw.githubusercontent.com/win64exe/mtg-adminpanel-rev/main/mtg-agent/install-agent.sh | bash
     ```
 4.  **Подключитесь к вашей ноде по SSH** и выполните эту команду.
     Скрипт автоматически скачает, настроит и запустит агента в Docker. Он будет использовать `AGENT_TOKEN`, который вы задали в `.env` файле панели.
