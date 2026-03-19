@@ -496,6 +496,23 @@ app.post('/api/nodes/:id/users', async (req, res) => {
       expires_at: expires_at||null, traffic_limit_gb: traffic_limit_gb||null,
       link: `tg://proxy?server=${node.host}&port=${port}&secret=${secret}`, request_id: req.request_id });
   } catch (e) {
+    const msg = String(e && e.message ? e.message : e);
+    if (msg === 'User already exists on node') {
+      try {
+        const cached = nodeCache.get(node.id);
+        const remote = (cached.remoteUsers || []).find(u => u.name === name);
+        if (remote && remote.port && remote.secret) {
+          db.prepare(
+            'INSERT INTO users (node_id, name, port, secret, note, expires_at, traffic_limit_gb) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).run(req.params.id, name, remote.port, remote.secret, note||'', expires_at||null, traffic_limit_gb||null);
+          nodeCache.refresh(node);
+          return res.json({ id: `imported-${name}`, name, port: remote.port, secret: remote.secret, note: note||'',
+            expires_at: expires_at||null, traffic_limit_gb: traffic_limit_gb||null,
+            link: `tg://proxy?server=${node.host}&port=${remote.port}&secret=${remote.secret}`, request_id: req.request_id });
+        }
+      } catch (_) {}
+      return res.status(409).json({ error: 'User already exists on node', request_id: req.request_id });
+    }
     console.error(`[create-user] ${req.request_id} node=${req.params.id} name=${name} error=${e && e.message ? e.message : e}`);
     if (e && e.stack) console.error(e.stack);
     res.status(500).json({ error: e.message, request_id: req.request_id });

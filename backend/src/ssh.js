@@ -22,8 +22,12 @@ function agentRequest(host, port, path, method = 'GET', body = null) {
       let data = '';
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
-        try { resolve({ status: res.statusCode, body: JSON.parse(data) }); }
-        catch { reject(new Error('Invalid JSON from agent')); }
+        try {
+          const parsed = data ? JSON.parse(data) : null;
+          resolve({ status: res.statusCode, body: parsed, raw: data, invalid_json: false });
+        } catch {
+          resolve({ status: res.statusCode, body: null, raw: data, invalid_json: true });
+        }
       });
     });
     req.setTimeout(4000, () => { req.destroy(); reject(new Error('Agent timeout')); });
@@ -35,18 +39,21 @@ function agentRequest(host, port, path, method = 'GET', body = null) {
 
 async function agentGet(node, path) {
   const r = await agentRequest(node.host, node.agent_port, path, 'GET');
+  if (r.invalid_json) throw new Error(`Invalid JSON from agent (${r.status}): ${(r.raw || '').slice(0, 200)}`);
   if (r.status >= 400) throw new Error(r.body?.detail || `Agent error ${r.status}`);
   return r.body;
 }
 
 async function agentPost(node, path, body = null) {
   const r = await agentRequest(node.host, node.agent_port, path, 'POST', body);
+  if (r.invalid_json) throw new Error(`Invalid JSON from agent (${r.status}): ${(r.raw || '').slice(0, 200)}`);
   if (r.status >= 400) throw new Error(r.body?.detail || `Agent error ${r.status}`);
   return r.body;
 }
 
 async function agentDelete(node, path) {
   const r = await agentRequest(node.host, node.agent_port, path, 'DELETE');
+  if (r.invalid_json) throw new Error(`Invalid JSON from agent (${r.status}): ${(r.raw || '').slice(0, 200)}`);
   if (r.status >= 400) throw new Error(r.body?.detail || `Agent error ${r.status}`);
   return r.body;
 }
@@ -206,13 +213,16 @@ async function createRemoteUser(node, name) {
       const r = await agentPost(node, '/users', { name });
       return { port: r.port, secret: r.secret };
     } catch (e) {
-      if (e.message && e.message.includes('already exists')) throw new Error('User already exists on node');
-      // Fall through to SSH only if agent is unavailable (connection error)
-      if (!e.message.includes('already exists') && !e.message.includes('Invalid')) {
-        // Network error — try SSH
-      } else {
-        throw e;
+      const msg = String(e && e.message ? e.message : e);
+      if (msg.toLowerCase().includes('already exists')) {
+        try {
+          const users = await agentGet(node, '/users');
+          const found = Array.isArray(users) ? users.find(u => u.name === name) : null;
+          if (found && found.port && found.secret) return { port: found.port, secret: found.secret };
+        } catch (_) {}
+        throw new Error('User already exists on node');
       }
+      // Any agent-side failure should fall back to SSH
     }
   }
   // SSH fallback
@@ -222,7 +232,12 @@ async function createRemoteUser(node, name) {
   const secretDomain = node.secret_domain || process.env.SECRET_DOMAIN || 'google.com';
   const scriptPath = path.join(__dirname, 'scripts/create_user.sh');
   const r = await runRemoteScript(node, scriptPath, [baseDir, name, startPort, mtgImage, secretDomain]);
-  if (r.output.includes('EXISTS')) throw new Error('User already exists on node');
+  if (r.output.includes('EXISTS')) {
+    const users = await getRemoteUsers(node);
+    const found = users.find(u => u.name === name);
+    if (found && found.port && found.secret) return { port: found.port, secret: found.secret };
+    throw new Error('User already exists on node');
+  }
   const okLine = r.output.split('\n').find(l => l.startsWith('OK|'));
   if (!okLine) throw new Error('Failed to create user: ' + r.output);
   const parts = okLine.split('|');
