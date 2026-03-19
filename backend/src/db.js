@@ -65,6 +65,13 @@ db.exec(`
     key TEXT PRIMARY KEY,
     value TEXT
   );
+
+  CREATE INDEX IF NOT EXISTS idx_users_node_name ON users(node_id, name);
+  CREATE INDEX IF NOT EXISTS idx_users_node_status ON users(node_id, status);
+  CREATE INDEX IF NOT EXISTS idx_users_last_seen ON users(last_seen_at);
+  CREATE INDEX IF NOT EXISTS idx_hist_node_user_time ON connections_history(node_id, user_name, recorded_at);
+  CREATE INDEX IF NOT EXISTS idx_nodes_host ON nodes(host);
+  CREATE INDEX IF NOT EXISTS idx_settings_key ON settings(key);
 `);
 
 module.exports = db;

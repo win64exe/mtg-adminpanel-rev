@@ -1,4 +1,6 @@
-export default function StatPill({ count, label, color, dot, large }) {
+import { memo } from 'react';
+
+function StatPillBase({ count, label, color, dot, large }) {
   const sz = large
     ? { num: 26, lbl: 11, pad: '12px 18px', r: 12 }
     : { num: 14, lbl: 11, pad: '5px 11px',  r: 8  };
@@ -24,3 +26,6 @@ export default function StatPill({ count, label, color, dot, large }) {
     </div>
   );
 }
+
+const StatPill = memo(StatPillBase);
+export default StatPill;
