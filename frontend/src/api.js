@@ -19,6 +19,15 @@ let _totpRequiredHandler = null;
 export function setTotpRequiredHandler(fn) { _totpRequiredHandler = fn; }
 
 const _pend = {};
+export async function reportClientError(payload) {
+  try {
+    const headers = { 'Content-Type': 'application/json', 'x-auth-token': getToken() };
+    const totp = getTotpCode();
+    if (totp) headers['x-totp-code'] = totp;
+    await fetch('/api/client-error', { method: 'POST', headers, body: JSON.stringify(payload || {}) });
+  } catch (_) {}
+}
+
 export async function api(method, path, body) {
   const key = `${method}:${path}`;
   if (method === 'GET' && _pend[key]) return _pend[key];
@@ -30,6 +39,7 @@ export async function api(method, path, body) {
   const req = fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined })
     .then(async r => {
       delete _pend[key];
+      const requestId = r.headers.get('x-request-id') || '';
       if (r.status === 401) { setToken(''); throw new Error('Unauthorized'); }
       if (r.status === 403) {
         const d = await r.json().catch(() => ({}));
@@ -55,9 +65,16 @@ export async function api(method, path, body) {
         }
       }
       if (!r.ok) {
-        if (data && typeof data === 'object' && data.error) throw new Error(data.error);
-        if (typeof data === 'string' && data) throw new Error(data);
-        throw new Error('API error');
+        let msg = 'API error';
+        if (data && typeof data === 'object' && data.error) msg = data.error;
+        else if (typeof data === 'string' && data) msg = data;
+        const err = new Error(msg);
+        err.status = r.status;
+        err.requestId = (data && typeof data === 'object' && data.request_id) ? data.request_id : requestId;
+        err.url = path;
+        err.method = method;
+        err.payload = body || null;
+        throw err;
       }
       // If non-JSON success, return an empty object to keep callers safe
       return data ?? {};

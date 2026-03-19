@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { api } from '../api.js';
+import { api, reportClientError } from '../api.js';
 import { toast } from '../toast.jsx';
 import * as I from '../icons.jsx';
 
@@ -26,7 +26,21 @@ export default function AddUserModal({ nodeId, onClose, onSave }) {
         toast('Клиент создан', 'success');
       }
       onSave(u || {});
-    } catch(e) { toast(e.message, 'error'); }
+    } catch(e) {
+      const meta = {
+        where: 'AddUserModal.submit',
+        action: 'create_user',
+        nodeId,
+        name: f.name.trim(),
+        status: e && e.status ? e.status : null,
+        request_id: e && e.requestId ? e.requestId : null,
+        message: e && e.message ? e.message : String(e),
+        url: e && e.url ? e.url : null,
+      };
+      console.error('Create user failed', meta, e);
+      reportClientError(meta);
+      toast(meta.request_id ? `${meta.message} (rid: ${meta.request_id})` : meta.message, 'error');
+    }
     finally { setLoading(false); }
   };
 

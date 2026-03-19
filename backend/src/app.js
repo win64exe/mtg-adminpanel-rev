@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
+const crypto  = require('crypto');
 const { authenticator } = require('otplib');
 const qrcode        = require('qrcode');
 const db            = require('./db');
@@ -82,6 +83,12 @@ nodeCache.start(db);
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  const id = (crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString('hex'));
+  req.request_id = id;
+  res.setHeader('x-request-id', id);
+  next();
+});
 app.use(express.static(path.join(__dirname, '../public')));
 
 // ── Public endpoints (no auth) ────────────────────────────
@@ -103,6 +110,19 @@ app.use('/api', (req, res, next) => {
     }
   }
   next();
+});
+
+app.post('/api/client-error', (req, res) => {
+  const p = req.body || {};
+  try {
+    const where = String(p.where || '');
+    const msg = String(p.message || p.error || '');
+    console.warn(`[client-error] ${req.request_id} ${where} ${msg}`.slice(0, 500));
+    console.warn(JSON.stringify(p).slice(0, 4000));
+  } catch (e) {
+    console.warn(`[client-error] ${req.request_id} malformed payload`);
+  }
+  res.json({ ok: true, request_id: req.request_id });
 });
 
 // ── TOTP 2FA ──────────────────────────────────────────────
@@ -470,12 +490,16 @@ app.post('/api/nodes/:id/users', async (req, res) => {
       setTimeout(() => retryInsert(0), 250);
       return res.status(202).json({ id: `tmp-${name}`, name, port, secret, note: note||'',
         expires_at: expires_at||null, traffic_limit_gb: traffic_limit_gb||null,
-        link: `tg://proxy?server=${node.host}&port=${port}&secret=${secret}`, pending: true });
+        link: `tg://proxy?server=${node.host}&port=${port}&secret=${secret}`, pending: true, request_id: req.request_id });
     }
     res.json({ id: result.lastInsertRowid, name, port, secret, note: note||'',
       expires_at: expires_at||null, traffic_limit_gb: traffic_limit_gb||null,
-      link: `tg://proxy?server=${node.host}&port=${port}&secret=${secret}` });
-  } catch (e) { res.status(500).json({ error: e.message }); }
+      link: `tg://proxy?server=${node.host}&port=${port}&secret=${secret}`, request_id: req.request_id });
+  } catch (e) {
+    console.error(`[create-user] ${req.request_id} node=${req.params.id} name=${name} error=${e && e.message ? e.message : e}`);
+    if (e && e.stack) console.error(e.stack);
+    res.status(500).json({ error: e.message, request_id: req.request_id });
+  }
 });
 
 app.put('/api/nodes/:id/users/:name', (req, res) => {
