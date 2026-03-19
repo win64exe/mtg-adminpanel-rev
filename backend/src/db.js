@@ -6,6 +6,10 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, '../data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const db = new Database(path.join(DATA_DIR, 'mtg-panel.db'));
+try { db.pragma('journal_mode = WAL'); } catch (_) {}
+try { db.pragma('synchronous = NORMAL'); } catch (_) {}
+try { db.pragma('foreign_keys = ON'); } catch (_) {}
+try { db.pragma('busy_timeout = 5000'); } catch (_) {}
 
 // ── Tables ────────────────────────────────────────────────
 db.exec(`

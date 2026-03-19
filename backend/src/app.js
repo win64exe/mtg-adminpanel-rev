@@ -440,9 +440,21 @@ app.post('/api/nodes/:id/users', async (req, res) => {
   }
   try {
     const { port, secret } = await ssh.createRemoteUser(node, name);
-    const result = db.prepare(
+    const stmt = db.prepare(
       'INSERT INTO users (node_id, name, port, secret, note, expires_at, traffic_limit_gb) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(req.params.id, name, port, secret, note||'', expires_at||null, traffic_limit_gb||null);
+    );
+    let result = null;
+    for (let i = 0; i < 5; i++) {
+      try {
+        result = stmt.run(req.params.id, name, port, secret, note||'', expires_at||null, traffic_limit_gb||null);
+        break;
+      } catch (e) {
+        const msg = String(e && e.message ? e.message : e);
+        const locked = msg.includes('SQLITE_BUSY') || msg.includes('database is locked') || msg.includes('SQLITE_LOCKED');
+        if (!locked || i === 4) throw e;
+        await new Promise(r => setTimeout(r, 150 * (i + 1)));
+      }
+    }
     nodeCache.refresh(node);
     res.json({ id: result.lastInsertRowid, name, port, secret, note: note||'',
       expires_at: expires_at||null, traffic_limit_gb: traffic_limit_gb||null,
