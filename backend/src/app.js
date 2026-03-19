@@ -444,9 +444,10 @@ app.post('/api/nodes/:id/users', async (req, res) => {
       'INSERT INTO users (node_id, name, port, secret, note, expires_at, traffic_limit_gb) VALUES (?, ?, ?, ?, ?, ?, ?)'
     );
     let result = null;
+    const params = [req.params.id, name, port, secret, note||'', expires_at||null, traffic_limit_gb||null];
     for (let i = 0; i < 5; i++) {
       try {
-        result = stmt.run(req.params.id, name, port, secret, note||'', expires_at||null, traffic_limit_gb||null);
+        result = stmt.run(...params);
         break;
       } catch (e) {
         const msg = String(e && e.message ? e.message : e);
@@ -456,6 +457,21 @@ app.post('/api/nodes/:id/users', async (req, res) => {
       }
     }
     nodeCache.refresh(node);
+    if (!result) {
+      const retryInsert = async (attempt = 0) => {
+        try {
+          stmt.run(...params);
+        } catch (e) {
+          const msg = String(e && e.message ? e.message : e);
+          const locked = msg.includes('SQLITE_BUSY') || msg.includes('database is locked') || msg.includes('SQLITE_LOCKED');
+          if (locked && attempt < 30) setTimeout(() => retryInsert(attempt + 1), 250);
+        }
+      };
+      setTimeout(() => retryInsert(0), 250);
+      return res.status(202).json({ id: `tmp-${name}`, name, port, secret, note: note||'',
+        expires_at: expires_at||null, traffic_limit_gb: traffic_limit_gb||null,
+        link: `tg://proxy?server=${node.host}&port=${port}&secret=${secret}`, pending: true });
+    }
     res.json({ id: result.lastInsertRowid, name, port, secret, note: note||'',
       expires_at: expires_at||null, traffic_limit_gb: traffic_limit_gb||null,
       link: `tg://proxy?server=${node.host}&port=${port}&secret=${secret}` });

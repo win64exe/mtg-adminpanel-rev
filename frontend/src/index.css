@@ -20,12 +20,15 @@
   --grad: linear-gradient(135deg, #7c6ff7 0%, #38bdf8 100%);
   --glow: 0 0 40px rgba(124,111,247,0.25);
   /* Text */
-  --t1: #0f172a;
-  --t2: rgba(15,23,42,0.72);
-  --t3: rgba(15,23,42,0.45);
+  --t1: #000;
+  --t2: rgba(0,0,0,0.72);
+  --t3: rgba(0,0,0,0.45);
   /* Fonts */
-  --sans: 'Geist', -apple-system, sans-serif;
-  --mono: 'Geist Mono', 'JetBrains Mono', monospace;
+  --mantine-font-family: Montserrat, Vazirmatn, Apple Color Emoji, Noto Sans SC, Twemoji Country Flags, sans-serif;
+  --mantine-font-family-monospace: Fira Mono, monospace;
+  --mantine-font-family-headings: Montserrat, Vazirmatn, Apple Color Emoji, Noto Sans SC, Twemoji Country Flags, sans-serif;
+  --sans: var(--mantine-font-family);
+  --mono: var(--mantine-font-family-monospace);
   /* Motion */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --tx: 0.2s var(--ease);
@@ -43,9 +46,9 @@
     --b2:    rgba(255,255,255,0.1);
     --b3:    rgba(255,255,255,0.16);
     /* Text */
-    --t1: #f1f1f8;
-    --t2: #6e7490;
-    --t3: #373d5a;
+    --t1: #fff;
+    --t2: rgba(255,255,255,0.72);
+    --t3: rgba(255,255,255,0.45);
   }
 }
 
@@ -94,6 +97,7 @@ body {
 }
 .logo-icon svg { width: 18px; height: 18px; color: #fff; }
 .logo-name {
+  font-family: var(--mantine-font-family-headings);
   font-size: 14px; font-weight: 600; letter-spacing: -0.2px;
   background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
@@ -163,7 +167,7 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
 }
-.page-title { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+.page-title { font-family: var(--mantine-font-family-headings); font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
 .page-title em {
   font-style: normal;
   background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
@@ -222,7 +226,7 @@ body {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--b1);
 }
-.card-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.card-title { font-family: var(--mantine-font-family-headings); font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .card-title svg { width: 15px; height: 15px; color: var(--t3); }
 
 .grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
@@ -311,7 +315,7 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
   padding: 20px 22px 18px; border-bottom: 1px solid var(--b1);
   display: flex; align-items: center; justify-content: space-between;
 }
-.modal-title { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.modal-title { font-family: var(--mantine-font-family-headings); font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
 .modal-title svg { width: 15px; height: 15px; color: var(--vi); }
 .modal-close { cursor: pointer; color: var(--t3); transition: color var(--tx); background: none; border: none; padding: 4px; }
 .modal-close:hover { color: var(--t1); }
@@ -373,6 +377,7 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
 @keyframes pg-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
 
 .sec-lbl {
+  font-family: var(--mantine-font-family-headings);
   font-size: 11px; font-weight: 600; color: var(--t3);
   text-transform: uppercase; letter-spacing: 1.2px;
   margin: 22px 0 14px; display: flex; align-items: center; gap: 10px;
@@ -401,6 +406,7 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
 }
 .login-icon svg { width: 28px; height: 28px; color: #fff; }
 .login-title {
+  font-family: var(--mantine-font-family-headings);
   font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
   background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }

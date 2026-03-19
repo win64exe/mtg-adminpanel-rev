@@ -112,6 +112,12 @@ export default function App() {
     { id: 'settings',  icon: <I.Settings/>,   label: 'Настройки' },
   ];
 
+  const isNavActive = (id) => {
+    if (id === 'nodes') return page === 'nodes' || page === 'node' || (page === 'users' && !!selNode);
+    if (id === 'users') return page === 'users' && !selNode;
+    return page === id;
+  };
+
   if (!authed) return (
     <>
       <Login onLogin={t => { setToken(t); setAuthed(true); }}/>
@@ -139,7 +145,7 @@ export default function App() {
           {NAV.map(item => (
             <div
               key={item.id}
-              className={`nav-item ${(page === item.id || (page === 'node' && item.id === 'nodes') || (page === 'users' && selNode && item.id === 'nodes')) ? 'active' : ''}`}
+              className={`nav-item ${isNavActive(item.id) ? 'active' : ''}`}
               onClick={() => nav(item.id)}>
               {item.icon}{item.label}
             </div>
@@ -174,7 +180,7 @@ export default function App() {
 
       <nav className="mobile-bar">
         {NAV.map(item => (
-          <div key={item.id} className={`mob-item ${page === item.id ? 'active' : ''}`} onClick={() => nav(item.id)}>
+          <div key={item.id} className={`mob-item ${isNavActive(item.id) ? 'active' : ''}`} onClick={() => nav(item.id)}>
             {item.icon}<span className="mob-label">{item.label}</span>
           </div>
         ))}

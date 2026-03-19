@@ -19,11 +19,17 @@ export default function UsersPage({ node, onBack }) {
   const [qrU, setQrU]         = useState(null);
   const [traffic, setTraffic] = useState({});
 
+  const mergeUsers = (prev, next) => {
+    const byName = new Map((next || []).map(u => [u.name, u]));
+    const keep = (prev || []).filter(u => u && u._optimistic && !byName.has(u.name) && (Date.now() - (u._optimisticAt || 0)) < 60000);
+    return [...(next || []), ...keep];
+  };
+
   const loadUsers = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRef(true);
     try {
       const u = await api('GET', `/api/nodes/${node.id}/users`);
-      setUsers(u);
+      setUsers(prev => mergeUsers(prev, u));
       // Build traffic map: prefer live data, fall back to DB snapshot
       const t = {};
       for (const user of u) {
@@ -217,7 +223,17 @@ export default function UsersPage({ node, onBack }) {
         )}
       </div>
 
-      {modal && <AddUserModal nodeId={node.id} onClose={() => setModal(false)} onSave={() => { setModal(false); loadUsers(true); }}/>}
+      {modal && <AddUserModal nodeId={node.id} onClose={() => setModal(false)} onSave={(u) => {
+        setModal(false);
+        if (u && typeof u === 'object' && u.name) {
+          setUsers(p => {
+            if (p.some(x => x.name === u.name)) return p;
+            return [{ ...u, _optimistic: true, _optimisticAt: Date.now(), id: u.id ?? `tmp-${u.name}` }, ...p];
+          });
+        }
+        loadUsers(true);
+        setTimeout(() => loadUsers(true), 1500);
+      }}/>}
       {qrU   && <QRModal user={qrU} onClose={() => setQrU(null)}/>}
       {editU && <EditModal user={editU} nodeId={node.id} onClose={() => setEditU(null)} onSave={() => { setEditU(null); loadUsers(true); }}/>}
     </div>
