@@ -253,7 +253,20 @@ async function removeRemoteUser(node, name) {
       await agentDelete(node, `/users/${name}`);
       return;
     } catch (e) {
-      if (!e.message.includes('timeout') && !e.message.includes('ECONNREFUSED')) throw e;
+      const msg = String(e && e.message ? e.message : e);
+      // Idempotent delete: if user doesn't exist on agent side, treat as success
+      if (msg.toLowerCase().includes('not found') || msg.includes('404')) return;
+      // Agent may be down or return non-JSON (reverse-proxy HTML, etc.) — fall back to SSH
+      if (
+        msg.includes('timeout') ||
+        msg.includes('ECONNREFUSED') ||
+        msg.includes('Invalid JSON from agent') ||
+        msg.includes('Agent error')
+      ) {
+        // fall through to SSH
+      } else {
+        throw e;
+      }
     }
   }
   // SSH fallback
