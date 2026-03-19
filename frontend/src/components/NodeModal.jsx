@@ -118,14 +118,14 @@ export default function NodeModal({ node, onClose, onSave }) {
 
           {/* Agent section */}
           <div style={{borderTop:'1px solid var(--b1)',paddingTop:16,marginTop:4}}>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-              <div style={{fontSize:13,fontWeight:600,display:'flex',alignItems:'center',gap:8}}>
+            <div className="agent-head">
+              <div className="agent-title">
                 <I.Activity/> MTG Agent
                 {agentStatus === true  && <span className="badge badge-green" style={{fontSize:10}}>доступен</span>}
                 {agentStatus === false && <span className="badge badge-red"   style={{fontSize:10}}>недоступен</span>}
                 {node?.agent_port && agentStatus === null && <span className="badge badge-purple" style={{fontSize:10}}>порт {node.agent_port}</span>}
               </div>
-              <div style={{display:'flex',gap:8}}>
+              <div className="agent-actions">
                 {node && <button className="btn btn-ghost btn-sm" onClick={checkAgent} disabled={agentChecking}>
                   {agentChecking ? <><span className="spin spin-sm"/> проверка</> : <><I.Wifi/> Проверить</>}
                 </button>}
