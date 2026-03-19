@@ -48,7 +48,7 @@ export default function UsersPage({ node, onBack }) {
   // Single polling interval — users endpoint now includes traffic
   useEffect(() => { loadUsers(); }, [loadUsers]);
   useEffect(() => {
-    const t = setInterval(() => loadUsers(true), 30000);
+    const t = setInterval(() => { if (!document.hidden) loadUsers(true); }, 30000);
     return () => clearInterval(t);
   }, [loadUsers]);
 

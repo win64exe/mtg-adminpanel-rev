@@ -40,9 +40,27 @@ export async function api(method, path, body) {
         }
         throw new Error(d.error || 'Forbidden');
       }
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error || 'API error');
-      return data;
+      // Robust JSON parsing: fallback to text to avoid "Unexpected end of input"
+      const ct = (r.headers.get('content-type') || '').toLowerCase();
+      let data = null;
+      if (ct.includes('application/json')) {
+        data = await r.json().catch(() => null);
+      } else {
+        const txt = await r.text().catch(() => '');
+        // Try to parse if looks like JSON, else keep as plain text
+        if (txt && txt.trim().startsWith('{')) {
+          try { data = JSON.parse(txt); } catch { data = null; }
+        } else {
+          data = txt;
+        }
+      }
+      if (!r.ok) {
+        if (data && typeof data === 'object' && data.error) throw new Error(data.error);
+        if (typeof data === 'string' && data) throw new Error(data);
+        throw new Error('API error');
+      }
+      // If non-JSON success, return an empty object to keep callers safe
+      return data ?? {};
     })
     .catch(e => { delete _pend[key]; throw e; });
 

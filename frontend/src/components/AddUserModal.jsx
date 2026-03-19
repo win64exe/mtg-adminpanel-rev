@@ -19,8 +19,13 @@ export default function AddUserModal({ nodeId, onClose, onSave }) {
         expires_at: f.expires_at || null,
         traffic_limit_gb: f.traffic_limit_gb ? parseFloat(f.traffic_limit_gb) : null,
       });
-      toast(`Юзер ${u.name} создан`, 'success');
-      onSave(u);
+      // Fallback in case response body is non-JSON or empty but operation succeeded
+      if (u && typeof u === 'object' && u.name) {
+        toast(`Юзер ${u.name} создан`, 'success');
+      } else {
+        toast('Клиент создан', 'success');
+      }
+      onSave(u || {});
     } catch(e) { toast(e.message, 'error'); }
     finally { setLoading(false); }
   };

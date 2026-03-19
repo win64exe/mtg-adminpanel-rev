@@ -1,13 +1,13 @@
 :root {
   /* Base */
-  --bg:    #080a12;
-  --bg2:   #0d0f1c;
-  --bg3:   #111322;
-  --card:  #141728;
-  --card2: #181b2e;
-  --b1:    rgba(255,255,255,0.06);
-  --b2:    rgba(255,255,255,0.1);
-  --b3:    rgba(255,255,255,0.16);
+  --bg:    #f6f7fb;
+  --bg2:   #ffffff;
+  --bg3:   #f1f3f8;
+  --card:  #ffffff;
+  --card2: #f7f8fc;
+  --b1:    rgba(15,23,42,0.08);
+  --b2:    rgba(15,23,42,0.12);
+  --b3:    rgba(15,23,42,0.18);
   /* Brand */
   --vi:  #7c6ff7;
   --vi2: #6055e0;
@@ -18,15 +18,33 @@
   --grad: linear-gradient(135deg, #7c6ff7 0%, #38bdf8 100%);
   --glow: 0 0 40px rgba(124,111,247,0.25);
   /* Text */
-  --t1: #f1f1f8;
-  --t2: #6e7490;
-  --t3: #373d5a;
+  --t1: #0f172a;
+  --t2: rgba(15,23,42,0.72);
+  --t3: rgba(15,23,42,0.45);
   /* Fonts */
   --sans: 'Geist', -apple-system, sans-serif;
   --mono: 'Geist Mono', 'JetBrains Mono', monospace;
   /* Motion */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --tx: 0.2s var(--ease);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Base */
+    --bg:    #080a12;
+    --bg2:   #0d0f1c;
+    --bg3:   #111322;
+    --card:  #141728;
+    --card2: #181b2e;
+    --b1:    rgba(255,255,255,0.06);
+    --b2:    rgba(255,255,255,0.1);
+    --b3:    rgba(255,255,255,0.16);
+    /* Text */
+    --t1: #f1f1f8;
+    --t2: #6e7490;
+    --t3: #373d5a;
+  }
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -189,6 +207,7 @@ body {
 .stat-lbl { font-size: 12px; color: var(--t3); font-weight: 400; }
 
 .card { background: var(--card); border: 1px solid var(--b1); border-radius: 12px; padding: 20px; }
+.card { box-shadow: 0 10px 30px rgba(15,23,42,0.06); }
 .card-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--b1);
@@ -207,7 +226,7 @@ body {
   content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
   background: var(--grad); opacity: 0; transition: opacity var(--tx);
 }
-.node-card:hover { border-color: rgba(124,111,247,0.3); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+.node-card:hover { border-color: rgba(124,111,247,0.3); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(15,23,42,0.12); }
 .node-card:hover::after { opacity: 1; }
 .node-icon {
   width: 40px; height: 40px; border-radius: 10px;
@@ -275,7 +294,7 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
 .modal {
   background: var(--bg2); border: 1px solid var(--b2); border-radius: 16px;
   padding: 0; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto;
-  animation: modal-in .22s var(--ease); box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  animation: modal-in .22s var(--ease); box-shadow: 0 32px 80px rgba(15,23,42,0.18);
 }
 @keyframes modal-in { from{opacity:0;transform:scale(.95) translateY(10px)} to{opacity:1;transform:none} }
 .modal-head {
@@ -305,7 +324,7 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
   display: flex; align-items: flex-start; gap: 10px;
   background: var(--card2); border: 1px solid var(--b2); border-radius: 10px; padding: 12px 14px;
   font-size: 13px; min-width: 240px; max-width: 340px;
-  animation: toast-in .25s var(--ease); box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  animation: toast-in .25s var(--ease); box-shadow: 0 12px 40px rgba(15,23,42,0.14);
 }
 .toast svg { width: 15px; height: 15px; flex-shrink: 0; margin-top: 1px; }
 .toast.success { border-left: 3px solid var(--gr); }
@@ -317,7 +336,7 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
 @keyframes toast-in { from{transform:translateX(32px) scale(.95);opacity:0} to{transform:none;opacity:1} }
 
 .spin {
-  width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.1);
+  width: 16px; height: 16px; border: 2px solid var(--b2);
   border-top-color: var(--cy); border-radius: 50%;
   animation: spinning .5s linear infinite; display: inline-block; flex-shrink: 0;
 }
@@ -399,7 +418,7 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
 
 .mobile-bar {
   display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 64px;
-  background: rgba(13,15,28,0.95); border-top: 1px solid var(--b1);
+  background: var(--bg2); border-top: 1px solid var(--b1);
   backdrop-filter: blur(20px); z-index: 200; align-items: stretch;
 }
 .mob-item {

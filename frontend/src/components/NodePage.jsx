@@ -25,7 +25,7 @@ export default function NodePage({ node, onBack, onManage, onReload }) {
 
   useEffect(() => {
     loadData();
-    const t = setInterval(loadData, 20000);
+    const t = setInterval(() => { if (!document.hidden) loadData(); }, 20000);
     return () => clearInterval(t);
   }, [loadData]);
 

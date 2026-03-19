@@ -31,7 +31,11 @@ export default function AllUsers({ nodes, onSelectNode }) {
     } finally { setLoading(false); setRefreshing(false); }
   }, [nodes]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    const t = setInterval(() => { if (!document.hidden) load(true); }, 30000);
+    return () => clearInterval(t);
+  }, [load]);
 
   const totalUsers  = Object.values(groups).reduce((a, u) => a + u.length, 0);
   const totalOnline = Object.values(groups).reduce((a, u) => a + u.filter(x => x.is_online).length, 0);

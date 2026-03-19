@@ -17,7 +17,7 @@ export default function NodesPage({ nodes, onReload, onManage, onOpenNode }) {
 
   useEffect(() => {
     loadStatus();
-    const t = setInterval(loadStatus, 20000);
+    const t = setInterval(() => { if (!document.hidden) loadStatus(); }, 20000);
     return () => clearInterval(t);
   }, [loadStatus]);
 

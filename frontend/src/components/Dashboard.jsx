@@ -17,7 +17,7 @@ export default function Dashboard({ nodes, onSelectNode, onManageNode }) {
 
   useEffect(() => {
     load();
-    const t = setInterval(() => load(true), 15000);
+    const t = setInterval(() => { if (!document.hidden) load(true); }, 15000);
     return () => clearInterval(t);
   }, [load]);
 
