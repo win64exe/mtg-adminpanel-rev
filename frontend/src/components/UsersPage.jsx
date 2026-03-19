@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api.js';
 import { toast } from '../toast.jsx';
-import { flagUrl, expiryBadge } from '../utils.jsx';
+import { flagClass, expiryBadge } from '../utils.jsx';
 import AddUserModal from './AddUserModal.jsx';
 import EditModal from './EditModal.jsx';
 import QRModal from './QRModal.jsx';
@@ -100,7 +100,9 @@ export default function UsersPage({ node, onBack }) {
         <div className="topbar-left" style={{display:'flex',alignItems:'center',gap:14}}>
           <button className="btn btn-ghost btn-sm" onClick={onBack}><I.ArrowLeft/> Назад</button>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            {node.flag && <img src={flagUrl(node.flag,'w80')} alt={node.flag} style={{width:30,height:22,objectFit:'cover',borderRadius:3,boxShadow:'0 1px 4px rgba(0,0,0,.3)',flexShrink:0}}/>}
+            {node.flag && flagClass(node.flag) && (
+              <span className={`flag-icon ${flagClass(node.flag)}`} title={node.flag} style={{flexShrink:0, '--CountryFlagIcon-height':'22px'}}/>
+            )}
             <div>
               <div className="page-title" style={{marginBottom:0}}><em>{node.name}</em></div>
               <div className="page-desc" style={{marginTop:0}}>{node.host}</div>

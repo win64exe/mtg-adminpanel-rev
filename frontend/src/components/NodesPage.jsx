@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api.js';
 import { toast } from '../toast.jsx';
-import { flagUrl } from '../utils.jsx';
+import { flagClass } from '../utils.jsx';
 import StatPill from './StatPill.jsx';
 import NodeModal from './NodeModal.jsx';
 import * as I from '../icons.jsx';
@@ -56,7 +56,9 @@ export default function NodesPage({ nodes, onReload, onManage, onOpenNode }) {
                   <div style={{padding:'18px 20px 14px',borderBottom:'1px solid var(--b1)',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:5}}>
-                        {node.flag && <img src={flagUrl(node.flag,'w80')} alt={node.flag} style={{width:32,height:24,objectFit:'cover',borderRadius:3,boxShadow:'0 1px 4px rgba(0,0,0,.3)',flexShrink:0}}/>}
+                        {node.flag && flagClass(node.flag) && (
+                          <span className={`flag-icon lg ${flagClass(node.flag)}`} title={node.flag} style={{flexShrink:0}}/>
+                        )}
                         <span style={{fontSize:17,fontWeight:700,letterSpacing:'-0.3px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{node.name}</span>
                         {node.agent_port && <span className="badge badge-purple" style={{fontSize:10,padding:'2px 6px'}}>Agent</span>}
                       </div>

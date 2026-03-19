@@ -1,3 +1,5 @@
+@import "country-flag-icons/3x2/flags.css";
+
 :root {
   /* Base */
   --bg:    #f6f7fb;
@@ -63,6 +65,14 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--b3); }
+
+.flag-icon {
+  display: inline-block;
+  border-radius: 3px;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.12);
+  --CountryFlagIcon-height: 18px;
+}
+.flag-icon.lg { --CountryFlagIcon-height: 24px; }
 
 .app { display: flex; min-height: 100vh; }
 

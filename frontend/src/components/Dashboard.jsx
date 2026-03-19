@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../api.js';
-import { flagUrl } from '../utils.jsx';
+import { flagClass } from '../utils.jsx';
 import StatPill from './StatPill.jsx';
 import * as I from '../icons.jsx';
 
@@ -77,7 +77,9 @@ export default function Dashboard({ nodes, onSelectNode, onManageNode }) {
                   <div style={{padding:'18px 20px 14px',borderBottom:'1px solid var(--b1)',display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:12}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:5}}>
-                        {node.flag && <img src={flagUrl(node.flag,'w80')} alt={node.flag} style={{width:32,height:24,objectFit:'cover',borderRadius:3,boxShadow:'0 1px 4px rgba(0,0,0,.3)',flexShrink:0}}/>}
+                        {node.flag && flagClass(node.flag) && (
+                          <span className={`flag-icon lg ${flagClass(node.flag)}`} title={node.flag} style={{flexShrink:0}}/>
+                        )}
                         <span style={{fontSize:18,fontWeight:700,letterSpacing:'-0.3px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{node.name}</span>
                       </div>
                       <div style={{fontSize:12,color:'var(--t3)',fontFamily:'var(--mono)'}}>{node.host}</div>

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api.js';
 import { toast } from '../toast.jsx';
-import { flagUrl, expiryBadge } from '../utils.jsx';
+import { flagClass, expiryBadge } from '../utils.jsx';
 import StatPill from './StatPill.jsx';
 import NodeModal from './NodeModal.jsx';
 import * as I from '../icons.jsx';
@@ -40,7 +40,9 @@ export default function NodePage({ node, onBack, onManage, onReload }) {
         <div className="topbar-left" style={{display:'flex',alignItems:'center',gap:14}}>
           <button className="btn btn-ghost btn-sm" onClick={onBack}><I.ArrowLeft/> Назад</button>
           <div style={{display:'flex',alignItems:'center',gap:10}}>
-            {node.flag && <img src={flagUrl(node.flag,'w80')} alt={node.flag} style={{width:32,height:24,objectFit:'cover',borderRadius:3,boxShadow:'0 1px 4px rgba(0,0,0,.3)'}}/>}
+            {node.flag && flagClass(node.flag) && (
+              <span className={`flag-icon lg ${flagClass(node.flag)}`} title={node.flag}/>
+            )}
             <div>
               <div className="page-title" style={{marginBottom:0}}><em>{node.name}</em></div>
               <div style={{fontSize:12,color:'var(--t3)',fontFamily:'var(--mono)'}}>{node.host}</div>

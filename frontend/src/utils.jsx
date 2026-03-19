@@ -1,5 +1,10 @@
-export const flagUrl = (code, size = 'w40') =>
-  code ? `https://flagcdn.com/${size}/${code}.png` : null;
+import { hasFlag } from 'country-flag-icons';
+
+export const flagClass = (code) => {
+  const c = String(code || '').trim().toUpperCase();
+  if (!c) return null;
+  return hasFlag(c) ? `flag:${c}` : null;
+};
 
 export const copyText = (txt, toast) => {
   const doCopy = () => {

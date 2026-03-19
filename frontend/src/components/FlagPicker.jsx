@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { COUNTRIES } from '../constants.js';
-import { flagUrl } from '../utils.jsx';
+import { flagClass } from '../utils.jsx';
 
 export default function FlagPicker({ value, onChange }) {
   const [open, setOpen] = useState(false);
   const current = COUNTRIES.find(c => c.code === value);
+  const currentFlag = current ? flagClass(current.code) : null;
   return (
     <div style={{position:'relative'}}>
       <div style={{display:'flex',alignItems:'center',gap:8,padding:'8px 11px',background:'var(--bg3)',
@@ -12,7 +13,9 @@ export default function FlagPicker({ value, onChange }) {
         onClick={() => setOpen(!open)}>
         {current ? (
           <>
-            <img src={flagUrl(current.code,'w40')} alt={current.code} style={{width:24,height:18,objectFit:'cover',borderRadius:2}}/>
+            {currentFlag
+              ? <span className={`flag-icon ${currentFlag}`} title={current.code}/>
+              : <span style={{fontSize:16,lineHeight:1}}>🌐</span>}
             <span style={{fontSize:13,color:'var(--t1)'}}>{current.name}</span>
           </>
         ) : (
@@ -30,16 +33,21 @@ export default function FlagPicker({ value, onChange }) {
               <span style={{fontSize:16}}>🌐</span>
               <span style={{fontSize:9,color:'var(--t3)'}}>нет</span>
             </div>
-            {COUNTRIES.map(c => (
-              <div key={c.code}
-                style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 4px',borderRadius:7,cursor:'pointer',
-                  border:`1px solid ${value===c.code?'rgba(124,111,247,.4)':'transparent'}`,
-                  background:value===c.code?'rgba(124,111,247,.1)':'transparent',transition:'all .15s'}}
-                onClick={() => { onChange(c.code); setOpen(false); }}>
-                <img src={flagUrl(c.code,'w40')} alt={c.code} style={{width:24,height:18,objectFit:'cover',borderRadius:2}}/>
-                <span style={{fontSize:9,color:'var(--t3)',textAlign:'center',lineHeight:1.2}}>{c.name}</span>
-              </div>
-            ))}
+            {COUNTRIES.map(c => {
+              const cls = flagClass(c.code);
+              return (
+                <div key={c.code}
+                  style={{display:'flex',flexDirection:'column',alignItems:'center',gap:3,padding:'6px 4px',borderRadius:7,cursor:'pointer',
+                    border:`1px solid ${value===c.code?'rgba(124,111,247,.4)':'transparent'}`,
+                    background:value===c.code?'rgba(124,111,247,.1)':'transparent',transition:'all .15s'}}
+                  onClick={() => { onChange(c.code); setOpen(false); }}>
+                  {cls
+                    ? <span className={`flag-icon ${cls}`} title={c.code}/>
+                    : <span style={{fontSize:16,lineHeight:1}}>🌐</span>}
+                  <span style={{fontSize:9,color:'var(--t3)',textAlign:'center',lineHeight:1.2}}>{c.name}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

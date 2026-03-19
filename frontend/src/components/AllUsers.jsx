@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '../api.js';
 import { toast } from '../toast.jsx';
-import { flagUrl, expiryBadge } from '../utils.jsx';
+import { flagClass, expiryBadge } from '../utils.jsx';
 import * as I from '../icons.jsx';
 
 const copyText = (txt) => navigator.clipboard.writeText(txt).then(() => toast('Скопировано!', 'success'));
@@ -67,8 +67,8 @@ export default function AllUsers({ nodes, onSelectNode }) {
                 {/* Node header */}
                 <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom: users.length ? 16 : 0}}>
                   <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    {node.flag
-                      ? <img src={flagUrl(node.flag,'w80')} alt={node.flag} style={{width:30,height:22,objectFit:'cover',borderRadius:3,boxShadow:'0 1px 4px rgba(0,0,0,.3)',flexShrink:0}}/>
+                    {node.flag && flagClass(node.flag)
+                      ? <span className={`flag-icon ${flagClass(node.flag)}`} title={node.flag} style={{flexShrink:0, '--CountryFlagIcon-height':'22px'}}/>
                       : <div className="node-icon" style={{width:30,height:30,borderRadius:7}}><I.Server/></div>}
                     <div>
                       <div style={{fontWeight:600,fontSize:14}}>{node.name}</div>
