@@ -375,29 +375,29 @@ tbody tr:hover td { background: rgba(124,111,247,0.04); }
   min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
   background: var(--bg);
   background-image:
-    radial-gradient(ellipse 60% 50% at 50% 0%, rgba(124,111,247,0.1) 0%, transparent 70%),
-    radial-gradient(ellipse 40% 30% at 80% 80%, rgba(56,189,248,0.05) 0%, transparent 60%);
+    radial-gradient(ellipse 120% 80% at 50% -10%, rgba(124,111,247,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 40% at 85% 90%, rgba(56,189,248,0.08) 0%, transparent 60%);
 }
 .login-card {
-  width: 100%; max-width: 400px; background: var(--bg2); border: 1px solid var(--b2);
-  border-radius: 20px; overflow: hidden; box-shadow: 0 32px 80px rgba(0,0,0,0.5);
+  width: 100%; max-width: 400px; background: var(--bg2); border: 1px solid var(--b1);
+  border-radius: 20px; overflow: hidden; box-shadow: 0 24px 60px rgba(15,23,42,0.12);
   animation: modal-in .3s var(--ease);
 }
 .login-head { padding: 32px 28px 24px; text-align: center; border-bottom: 1px solid var(--b1); }
 .login-icon {
   width: 60px; height: 60px; background: var(--grad); border-radius: 18px;
   display: inline-flex; align-items: center; justify-content: center;
-  margin-bottom: 16px; box-shadow: 0 0 40px rgba(124,111,247,0.4);
+  margin-bottom: 16px; box-shadow: 0 0 30px rgba(124,111,247,0.25);
 }
 .login-icon svg { width: 28px; height: 28px; color: #fff; }
 .login-title {
   font-size: 22px; font-weight: 700; letter-spacing: -0.5px;
   background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
-.login-sub { font-size: 13px; color: var(--t3); margin-top: 5px; font-family: var(--mono); }
+.login-sub { font-size: 13px; color: var(--t2); margin-top: 5px; font-family: var(--mono); }
 .login-body { padding: 24px 28px 28px; }
 .totp-code-input {
-  text-align: center; font-size: 32px; letter-spacing: 12px;
+  text-align: center; font-size: 32px; letter-spacing: 10px;
   font-family: var(--mono); font-weight: 600;
 }
 
