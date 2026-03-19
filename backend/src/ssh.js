@@ -220,7 +220,9 @@ async function createRemoteUser(node, name) {
           const found = Array.isArray(users) ? users.find(u => u.name === name) : null;
           if (found && found.port && found.secret) return { port: found.port, secret: found.secret };
         } catch (_) {}
-        throw new Error('User already exists on node');
+        // Agent reported "already exists" but didn't return the user in /users.
+        // This can happen when agent is misconfigured (wrong BASE_DIR) or behind a proxy returning unrelated errors.
+        // Fall back to SSH which checks the real directory.
       }
       // Any agent-side failure should fall back to SSH
     }
