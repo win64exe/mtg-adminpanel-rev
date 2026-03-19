@@ -255,7 +255,7 @@ async function removeRemoteUser(node, name) {
     } catch (e) {
       const msg = String(e && e.message ? e.message : e);
       // Idempotent delete: if user doesn't exist on agent side, treat as success
-      if (msg.toLowerCase().includes('not found') || msg.includes('404')) return;
+      if (msg.toLowerCase().includes('not found')) return;
       // Agent may be down or return non-JSON (reverse-proxy HTML, etc.) — fall back to SSH
       if (
         msg.includes('timeout') ||
